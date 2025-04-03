@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionType {
+  PREMIUM
+  TIME_TRACKING
+}
+
+model User {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  password          String
+  name              String?
+  ownedStudyRooms   StudyRoom[]    @relation("StudyRoomOwner")
+  participatedRooms StudyRoom[]    @relation("StudyRoomParticipants")
+  tasks             Task[]
+  studySessions     StudySession[]
+  subscriptions     Subscription[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model StudyRoom {
+  id            String         @id @default(uuid())
+  name          String
+  owner         User           @relation("StudyRoomOwner", fields: [ownerId], references: [id])
+  ownerId       String
+  participants  User[]         @relation("StudyRoomParticipants")
+  timerSettings TimerSetting[]
+  studySessions StudySession[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model TimerSetting {
+  id          String    @id @default(uuid())
+  name        String    @default("Default Timer")
+  studyRoom   StudyRoom @relation(fields: [studyRoomId], references: [id])
+  studyRoomId String
+  duration    Int
+  breakTime   Int
+  createdAt   DateTime  @default(now())
+  isDefault   Boolean   @default(true)
+
+  @@unique([studyRoomId, isDefault], name: "uniqueDefaultTimer")
+}
+
+model StudySession {
+  id          String    @id @default(uuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  studyRoom   StudyRoom @relation(fields: [studyRoomId], references: [id])
+  studyRoomId String
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Int?
+  timerUsed   String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  title       String
+  description String?
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Subscription {
+  id        String           @id @default(uuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  type      SubscriptionType
+  createdAt DateTime         @default(now())
+  expiresAt DateTime
+}
