@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import cookieparser from "cookie-parser";
 import { authRouter } from "./routes/auth/auth.route";
+import { roomRouter } from "./routes/room/room.route";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(
 );
 
 app.use("/api/auth", authRouter);
+app.use("/api/room", roomRouter);
 
 app.get("/", async (req, res) => {
   res.send("Hello World! , From StudySync");
