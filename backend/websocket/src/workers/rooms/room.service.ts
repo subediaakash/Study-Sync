@@ -4,7 +4,6 @@ export class RoomService {
   private studyRooms: Map<string, Map<string, WebSocket>> = new Map();
 
   public joinRoom(userId: string, roomId: string, ws: WebSocket): void {
-    // ✅ Use correct type
     if (!this.studyRooms.has(roomId)) {
       this.studyRooms.set(roomId, new Map());
     }
@@ -28,6 +27,30 @@ export class RoomService {
         timestamp: Date.now(),
       })
     );
+  }
+
+  
+
+
+
+  public getParticipants(roomId: string): string[] {
+    if (this.studyRooms.has(roomId)) {
+      return Array.from(this.studyRooms.get(roomId)?.keys() || []);
+    }
+    return [];
+  }
+
+  public sendPrivateMessage(
+    roomId: string,
+    userId: string,
+    message: object
+  ): void {
+    if (this.studyRooms.has(roomId)) {
+      const ws = this.studyRooms.get(roomId)?.get(userId);
+      if (ws) {
+        ws.send(JSON.stringify(message));
+      }
+    }
   }
 
   public leaveRoom(userId: string, roomId: string): void {
