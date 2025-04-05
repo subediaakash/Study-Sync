@@ -1,61 +1,92 @@
-import http from "http";
-import { WebSocketServer, WebSocket } from "ws";
+import * as http from "http";
+import express from "express";
+import WebSocket, { WebSocketServer as WSS } from "ws";
+import { RoomService } from "./workers/rooms/room.service";
 
-const server = http.createServer();
-server.listen(3080, () => {
-  console.log("Server listening on port 3080");
-});
+class WebSocketServer {
+  private server: http.Server;
+  private wss: WSS;
+  private roomService: RoomService;
 
-const wss = new WebSocketServer({ server });
-const connections = new Set<WebSocket>();
+  constructor() {
+    const app = express();
+    this.server = http.createServer(app);
+    this.wss = new WSS({ server: this.server });
+    this.roomService = new RoomService();
 
-const studyRooms = new Map<string, WebSocket[]>();
+    this.setupWebSocket();
+  }
 
-wss.on("connection", (ws) => {
-  let userId = null;
-  let roomId = null;
+  private setupWebSocket(): void {
+    this.wss.on("connection", (ws: WebSocket) => {
+      let userId: string | null = null;
+      let roomId: string | null = null;
 
-  ws.on("message", (message) => {
-    const data = JSON.parse(message.toString());
-    switch (data.type) {
-      case "join":
-        userId = data.userId;
-        roomId = data.roomId;
+      ws.on("message", (message: string) => {
+        try {
+          const data = JSON.parse(message);
+          switch (data.type) {
+            case "join":
+              userId = data.userId;
+              roomId = data.roomId;
+              if (!userId || !roomId) {
+                return ws.send("User ID and room ID are required");
+              }
+              this.roomService.joinRoom(userId, roomId, ws);
+              break;
 
-        if (!studyRooms.has(roomId)) {
-          studyRooms.set(roomId, []);
+            case "pomodoro_update":
+              if (roomId) {
+                this.roomService.broadcastToRoom(roomId, {
+                  type: "pomodoro_update",
+                  timerState: data.timerState,
+                  timestamp: Date.now(),
+                });
+              }
+              break;
+
+            case "task_update":
+              if (roomId) {
+                this.roomService.broadcastToRoom(roomId, {
+                  type: "task_update",
+                  userId,
+                  tasks: data.tasks,
+                  timestamp: Date.now(),
+                });
+              }
+              break;
+
+            case "chat":
+              if (roomId) {
+                this.roomService.broadcastToRoom(roomId, {
+                  type: "chat",
+                  userId,
+                  message: data.message,
+                  timestamp: Date.now(),
+                });
+              }
+              break;
+          }
+        } catch (error) {
+          console.error("Error processing message:", error);
         }
-        const room = studyRooms.get(roomId);
-        if (room) {
-          room.push(ws);
+      });
+
+      ws.on("close", () => {
+        if (roomId && userId) {
+          this.roomService.leaveRoom(userId, roomId);
         }
+      });
+    });
+  }
 
-        broadcastToRoom(
-          roomId,
-          {
-            type: "user_joined",
-            userId: userId,
-            timestamp: Date.now(),
-          },
-          userId
-        );
+  public start(port: number): void {
+    this.server.listen(port, () => {
+      console.log(`WebSocket server running on port ${port}`);
+    });
+  }
+}
 
-        const roomOfIndividual = studyRooms.get(roomId);
-        const roomParticipants = roomOfIndividual
-          ? Array.from(roomOfIndividual)
-          : [];
-        ws.send(
-          JSON.stringify({
-            type: "room_state",
-            participants: roomParticipants,
-            timestamp: Date.now(),
-          })
-        );
-        break;
-    }
-  });
-  ws.on("close", () => {
-    console.log("Client disconnected");
-    connections.delete(ws);
-  });
-});
+// Start server
+const webSocketServer = new WebSocketServer();
+webSocketServer.start(8080);
