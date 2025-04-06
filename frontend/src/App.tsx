@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./components/LoginSection";
 import SignupPage from "./components/SignupSection";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import CreateRoom from "./pages/CreateRoom";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,8 @@ const App = () => (
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Index />} />
+            <Route path="/create-rooms" element={<CreateRoom />} />
+
           </Route>
         </Routes>
       </BrowserRouter>

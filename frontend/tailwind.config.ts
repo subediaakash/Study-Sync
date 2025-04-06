@@ -20,6 +20,8 @@ export default {
     },
     extend: {
       colors: {
+        "study-blue": "#2563eb",
+        "study-darkBlue": "#1e40af",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
