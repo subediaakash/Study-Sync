@@ -107,11 +107,24 @@ export class AuthService {
       res.status(500).json({ error: "Internal server error" });
     }
   }
-  async getUserProfile(req: Request, res: Response): Promise<void> {
-    const id = req.body.id;
+
+  async checkProfile(req: Request, res: Response): Promise<void> {
+    const token = req.cookies.auth_token;
+
+    if (!token) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
     try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your-default-secret"
+      );
+      const userId = (decoded as any).userId;
+
       const user = await prisma.user.findUnique({
-        where: { id: id },
+        where: { id: userId },
         select: {
           name: true,
           email: true,
@@ -130,8 +143,8 @@ export class AuthService {
         data: user,
       });
     } catch (err) {
-      console.error("Error retrieving user profile:", err);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Error verifying token:", err);
+      res.status(401).json({ error: "Invalid token" });
     }
   }
 }

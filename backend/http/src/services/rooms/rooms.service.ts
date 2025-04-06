@@ -43,5 +43,44 @@ export class RoomService {
     }
   }
 
-  
+  async addPeopleInRoom(req: any, res: any) {
+    const personId = req.body.personId;
+    const roomId = req.params.id;
+    const user = req.locals.user;
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+      const userId = user.id;
+      // to check weather the person who is trying to add is the owner of the room or not
+      const room = await this.prisma.studyRoom.findUnique({
+        where: { id: roomId },
+      });
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      if (room.ownerId !== userId) {
+        return res.status(403).json({
+          error: "Forbidden",
+          message: "Only owners can add people in the good",
+        });
+      }
+
+      const updatedRoom = await this.prisma.studyRoom.update({
+        where: { id: roomId },
+        data: {
+          participants: {
+            connect: { id: personId },
+          },
+        },
+      });
+      return res.status(200).json(updatedRoom);
+    } catch (error: any) {
+      return res.status(500).json({
+        error: "Failed to add person to room",
+        details: error.message,
+      });
+    }
+  }
 }

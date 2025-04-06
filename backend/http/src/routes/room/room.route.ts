@@ -8,3 +8,4 @@ roomRouter.use(isAuthenticated);
 roomRouter.post("/", RoomController.createRoom);
 roomRouter.get("/", RoomController.getRooms);
 roomRouter.get("/:id", RoomController.getRoomById);
+roomRouter.post("/add/:id", RoomController.addPeopleInRoom);

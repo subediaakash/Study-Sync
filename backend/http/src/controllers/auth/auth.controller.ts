@@ -11,4 +11,7 @@ export class AuthController {
   static async signin(req: Request, res: Response): Promise<void> {
     await authService.signin(req, res);
   }
+  static async getUser(req: Request, res: Response): Promise<void> {
+    await authService.checkProfile(req, res);
+  }
 }

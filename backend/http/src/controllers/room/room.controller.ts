@@ -9,12 +9,14 @@ export class RoomController {
   }
 
   static async getRooms(req: Request, res: Response) {
-    const roomService = new RoomService();
     await roomService.getRooms(req, res);
   }
 
   static async getRoomById(req: Request, res: Response) {
-    const roomService = new RoomService();
     await roomService.getRoomById(req, res);
+  }
+
+  static async addPeopleInRoom(req: Request, res: Response) {
+    await roomService.addPeopleInRoom(req, res);
   }
 }
