@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./components/LoginSection";
 import SignupPage from "./components/SignupSection";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -17,10 +18,13 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<NotFound />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Index />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

@@ -51,7 +51,7 @@ export const signupAtom = atom(
 
 export const checkAuthAtom = atom(null, async (get, set) => {
   try {
-    const response = await api.get("/api/profile");
+    const response = await api.get("/api/auth/profile");
     const user = response.data.data;
     set(authAtom, user);
     return { success: true, user };

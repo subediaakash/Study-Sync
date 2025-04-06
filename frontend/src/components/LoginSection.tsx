@@ -25,7 +25,7 @@ const LoginPage = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  const from = location.state?.from?.pathname || "/dashboard";
+  const from = location.state?.from?.pathname || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
