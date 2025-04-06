@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Clock } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import Navbar from "./Navbar";
+import { useAuth } from "@/hooks/use-auth";
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -26,8 +25,9 @@ const SignupPage = () => {
   });
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { signup } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,40 +40,54 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      toast({
+        variant: "destructive",
+        title: "Passwords do not match",
+        description: "Please make sure both password fields are identical.",
+      });
       setLoading(false);
       return;
     }
 
-    // Validate terms agreement
     if (!agreeTerms) {
-      setError("You must agree to the terms and conditions");
+      toast({
+        variant: "destructive",
+        title: "Agreement required",
+        description: "You must agree to the terms and conditions to proceed.",
+      });
       setLoading(false);
       return;
     }
 
     try {
-      const response = await axios.post("/api/auth/signup", {
+      const result = await signup({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
 
-      // Store the token if the API returns one
-      if (response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
+      if (result.success) {
+        toast({
+          title: "Account created!",
+          description: "Welcome aboard! You've successfully signed up.",
+        });
+        navigate("/login");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Signup failed",
+          description:
+            result.error || "Something went wrong. Please try again.",
+        });
       }
-
-      // Redirect to login or onboarding
-      navigate("/login");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
+      toast({
+        variant: "destructive",
+        title: "Unexpected error",
+        description: "An error occurred. Please try again later.",
+      });
     } finally {
       setLoading(false);
     }
@@ -81,10 +95,8 @@ const SignupPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Navbar */}
       <Navbar />
 
-      {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -95,13 +107,9 @@ const SignupPage = () => {
               Join Study Sync to focus better and achieve more
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
@@ -113,6 +121,7 @@ const SignupPage = () => {
                   required
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -125,6 +134,7 @@ const SignupPage = () => {
                   required
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -136,6 +146,7 @@ const SignupPage = () => {
                   required
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input
@@ -147,41 +158,36 @@ const SignupPage = () => {
                   required
                 />
               </div>
+
               <div className="flex items-center space-x-2 pt-2">
                 <Checkbox
                   id="terms"
                   checked={agreeTerms}
-                  onCheckedChange={(checked) => setAgreeTerms(checked === true)}
+                  onCheckedChange={(val) => setAgreeTerms(val === true)}
                 />
-                <label
-                  htmlFor="terms"
-                  className="text-sm text-gray-600 cursor-pointer"
-                >
+                <Label htmlFor="terms" className="text-sm text-gray-600">
                   I agree to the{" "}
-                  <Link to="/terms" className="text-blue-600 hover:underline">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link to="/privacy" className="text-blue-600 hover:underline">
-                    Privacy Policy
+                  <Link to="/terms" className="text-blue-600 underline">
+                    terms and conditions
                   </Link>
-                </label>
+                </Label>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating Account..." : "Create Account"}
+
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={loading}
+              >
+                {loading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t pt-4">
-            <p className="text-sm text-gray-600">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="text-blue-600 hover:underline font-medium"
-              >
-                Sign in
-              </Link>
-            </p>
+
+          <CardFooter className="text-center text-sm text-gray-600">
+            Already have an account?{" "}
+            <Link to="/login" className="text-blue-600 underline ml-1">
+              Login here
+            </Link>
           </CardFooter>
         </Card>
       </main>
