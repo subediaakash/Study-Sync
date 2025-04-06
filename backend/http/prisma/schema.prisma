@@ -12,6 +12,16 @@ enum SubscriptionType {
   TIME_TRACKING
 }
 
+enum RoomCategory {
+  MATHEMATICS
+  COMPUTER_SCIENCE
+  LANGUAGES
+  TECHNOLOGY
+  HUMANITIES
+  SCIENCE
+  BUSINESS
+}
+
 model User {
   id                String         @id @default(uuid())
   email             String         @unique
@@ -27,28 +37,29 @@ model User {
 }
 
 model StudyRoom {
-  id            String         @id @default(uuid())
-  name          String
-  owner         User           @relation("StudyRoomOwner", fields: [ownerId], references: [id])
-  ownerId       String
-  participants  User[]         @relation("StudyRoomParticipants")
-  timerSettings TimerSetting[]
-  studySessions StudySession[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id             String         @id @default(uuid())
+  name           String
+  category       RoomCategory
+  description    String?
+  owner          User           @relation("StudyRoomOwner", fields: [ownerId], references: [id])
+  ownerId        String
+  participants   User[]         @relation("StudyRoomParticipants")
+  timerSettings  TimerSetting   @relation(fields: [timerSettingId], references: [id])
+  timerSettingId String         @unique
+  isPrivate      Boolean        @default(false)
+  password       String?
+  studySessions  StudySession[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model TimerSetting {
-  id          String    @id @default(uuid())
-  name        String    @default("Default Timer")
-  studyRoom   StudyRoom @relation(fields: [studyRoomId], references: [id])
-  studyRoomId String
-  duration    Int
-  breakTime   Int
-  createdAt   DateTime  @default(now())
-  isDefault   Boolean   @default(true)
-
-  @@unique([studyRoomId, isDefault], name: "uniqueDefaultTimer")
+  id        String     @id @default(uuid())
+  name      String     @default("Default Timer")
+  studyRoom StudyRoom?
+  focusTime Int        @default(25)
+  breakTime Int        @default(5)
+  createdAt DateTime   @default(now())
 }
 
 model StudySession {

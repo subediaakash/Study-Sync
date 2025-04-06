@@ -5,7 +5,17 @@ import { isAuthenticated } from "../../middlewares/auth.middleware";
 export const roomRouter = Router();
 
 roomRouter.use(isAuthenticated);
+
 roomRouter.post("/", RoomController.createRoom);
 roomRouter.get("/", RoomController.getRooms);
 roomRouter.get("/:id", RoomController.getRoomById);
-roomRouter.post("/add/:id", RoomController.addPeopleInRoom);
+roomRouter.put("/:id", RoomController.updateRoom);
+roomRouter.delete("/:id", RoomController.deleteRoom);
+
+// Participant management
+
+roomRouter.post("/:id/participants", RoomController.addParticipantToRoom);
+roomRouter.delete(
+  "/:id/participants",
+  RoomController.removeParticipantFromRoom
+);

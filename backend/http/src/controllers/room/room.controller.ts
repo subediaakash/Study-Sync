@@ -16,7 +16,19 @@ export class RoomController {
     await roomService.getRoomById(req, res);
   }
 
-  static async addPeopleInRoom(req: Request, res: Response) {
-    await roomService.addPeopleInRoom(req, res);
+  static async addParticipantToRoom(req: Request, res: Response) {
+    await roomService.addParticipantToRoom(req, res);
+  }
+
+  static async updateRoom(req: Request, res: Response) {
+    await roomService.updateRoom(req, res);
+  }
+
+  static async deleteRoom(req: Request, res: Response) {
+    await roomService.deleteRoom(req, res);
+  }
+
+  static async removeParticipantFromRoom(req: Request, res: Response) {
+    await roomService.removeParticipantFromRoom(req, res);
   }
 }
