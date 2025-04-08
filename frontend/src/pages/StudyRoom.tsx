@@ -11,7 +11,6 @@ import ParticipantsList from "@/components/studyRooms/ParticipantsList";
 import GoalsSection from "@/components/studyRooms/GoalsSection";
 import RoomStatistics from "@/components/studyRooms/RoomStatistics";
 
-// Mock data - in a real app this would come from your backend
 const MOCK_MESSAGES: Message[] = [
   {
     id: "1",

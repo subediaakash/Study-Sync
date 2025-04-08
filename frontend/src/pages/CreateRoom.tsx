@@ -73,7 +73,7 @@ const CreateRoom = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       toast.success("Room created successfully!");
-      navigate(`/room/${data.id}`);
+      navigate(`/rooms/${data.id}`);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.details || "Failed to create room");
