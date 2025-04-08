@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import Cookies from "js-cookie";
+import { useAtomValue } from "jotai";
+
 import { Button } from "@/components/ui/button";
+import { authAtom } from "@/auth/atom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,9 +19,45 @@ import {
 import { Switch } from "@/components/ui/switch";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
+import axios from "axios";
+
+interface RoomData {
+  name: string;
+  ownerId: string | null;
+  category: string;
+  description: string;
+  isPrivate: boolean;
+  password: string | null;
+  timerSettings: {
+    name: string;
+    focusTime: number;
+    breakTime: number;
+  };
+}
+
+const createRoomAPI = async (roomData: RoomData) => {
+  const authToken = Cookies.get("auth_token");
+
+  const response = await axios.post(
+    "http://localhost:3000/api/room/",
+    { ...roomData },
+    {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+      withCredentials: true,
+    }
+  );
+
+  return response.data;
+};
 
 const CreateRoom = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const user = useAtomValue(authAtom);
+  const userId = user?.id;
+
   const [formData, setFormData] = useState({
     roomName: "",
     category: "",
@@ -25,6 +66,18 @@ const CreateRoom = () => {
     breakTime: 5,
     isPrivate: false,
     password: "",
+  });
+
+  const createRoomMutation = useMutation({
+    mutationFn: (data: RoomData) => createRoomAPI(data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      toast.success("Room created successfully!");
+      navigate(`/room/${data.id}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.details || "Failed to create room");
+    },
   });
 
   const handleInputChange = (
@@ -45,7 +98,6 @@ const CreateRoom = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!formData.roomName.trim()) {
       toast.error("Room name is required");
       return;
@@ -61,21 +113,43 @@ const CreateRoom = () => {
       return;
     }
 
-    // In a real app, you would send this data to your backend
-    console.log("Creating room with data:", formData);
+    const roomData: RoomData = {
+      name: formData.roomName,
+      ownerId: userId,
+      category: capitaliseAllWords(formData.category),
+      description: formData.description,
+      isPrivate: formData.isPrivate,
+      password: formData.isPrivate ? formData.password : null,
+      timerSettings: {
+        name: "Custom Timer",
+        focusTime: Number(formData.focusTime),
+        breakTime: Number(formData.breakTime),
+      },
+    };
 
-    // Show success message
-    toast.success("Room created successfully!");
+    console.log(roomData);
 
-    // Navigate to the room (in a real app, you would use the ID returned from the server)
-    navigate("/room/new");
+    createRoomMutation.mutate(roomData);
   };
+
+  const capitaliseAllWords = (str: string): string => {
+    return str.toUpperCase();
+  };
+  const categories = [
+    "mathematics",
+    "computer science",
+    "languages",
+    "technology",
+    "humanities",
+    "science",
+    "business",
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
       <Navbar />
 
-      <div className="container  mx-auto px-4 py-10">
+      <div className="container mx-auto px-4 py-10">
         <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-md p-8 border border-gray-200">
           <h1 className="text-3xl font-semibold mb-8 text-gray-800">
             Create a <span className="text-study-blue">Study Room</span>
@@ -84,46 +158,30 @@ const CreateRoom = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Room Name */}
             <div className="space-y-2">
-              <Label htmlFor="roomName" className="text-gray-700">
-                Room Name
-              </Label>
+              <Label htmlFor="roomName">Room Name</Label>
               <Input
                 id="roomName"
                 name="roomName"
                 placeholder="Enter a name for your study room"
                 value={formData.roomName}
                 onChange={handleInputChange}
-                className="focus:ring-2 focus:ring-study-blue transition"
               />
             </div>
 
             {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-gray-700">
-                Category
-              </Label>
+              <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => handleSelectChange("category", value)}
               >
-                <SelectTrigger
-                  id="category"
-                  className="focus:ring-2 focus:ring-study-blue transition"
-                >
+                <SelectTrigger id="category">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[
-                    "Mathematics",
-                    "Computer Science",
-                    "Languages",
-                    "Technology",
-                    "Humanities",
-                    "Science",
-                    "Business",
-                  ].map((cat) => (
+                  {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      {cat}
+                      {capitaliseAllWords(cat)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -132,7 +190,7 @@ const CreateRoom = () => {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-gray-700">
+              <Label htmlFor="description">
                 Description{" "}
                 <span className="text-sm text-gray-400">(Optional)</span>
               </Label>
@@ -143,26 +201,20 @@ const CreateRoom = () => {
                 rows={3}
                 value={formData.description}
                 onChange={handleInputChange}
-                className="focus:ring-2 focus:ring-study-blue transition"
               />
             </div>
 
             {/* Focus / Break Time */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="focusTime" className="text-gray-700">
-                  Focus Time
-                </Label>
+                <Label htmlFor="focusTime">Focus Time</Label>
                 <Select
                   value={formData.focusTime.toString()}
                   onValueChange={(value) =>
                     handleSelectChange("focusTime", value)
                   }
                 >
-                  <SelectTrigger
-                    id="focusTime"
-                    className="focus:ring-2 focus:ring-study-blue transition"
-                  >
+                  <SelectTrigger id="focusTime">
                     <SelectValue placeholder="Select focus time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -176,19 +228,14 @@ const CreateRoom = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="breakTime" className="text-gray-700">
-                  Break Time
-                </Label>
+                <Label htmlFor="breakTime">Break Time</Label>
                 <Select
                   value={formData.breakTime.toString()}
                   onValueChange={(value) =>
                     handleSelectChange("breakTime", value)
                   }
                 >
-                  <SelectTrigger
-                    id="breakTime"
-                    className="focus:ring-2 focus:ring-study-blue transition"
-                  >
+                  <SelectTrigger id="breakTime">
                     <SelectValue placeholder="Select break time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -202,12 +249,10 @@ const CreateRoom = () => {
               </div>
             </div>
 
-            {/* Private Room Switch */}
+            {/* Private Room */}
             <div className="flex items-center justify-between border-t pt-6">
-              <div className="space-y-1">
-                <Label htmlFor="isPrivate" className="text-gray-700">
-                  Private Room
-                </Label>
+              <div>
+                <Label htmlFor="isPrivate">Private Room</Label>
                 <p className="text-sm text-gray-500">
                   Require a password to join
                 </p>
@@ -219,12 +264,10 @@ const CreateRoom = () => {
               />
             </div>
 
-            {/* Password field (conditionally visible) */}
+            {/* Password */}
             {formData.isPrivate && (
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700">
-                  Room Password
-                </Label>
+                <Label htmlFor="password">Room Password</Label>
                 <Input
                   id="password"
                   name="password"
@@ -232,7 +275,6 @@ const CreateRoom = () => {
                   placeholder="Enter a password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="focus:ring-2 focus:ring-study-blue transition"
                 />
               </div>
             )}
@@ -243,15 +285,16 @@ const CreateRoom = () => {
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/browse-rooms")}
-                className="border-gray-300 hover:border-gray-400"
+                disabled={createRoomMutation.isPending}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="bg-study-blue hover:bg-study-darkBlue text-white"
+                disabled={createRoomMutation.isPending}
               >
-                Create Room
+                {createRoomMutation.isPending ? "Creating..." : "Create Room"}
               </Button>
             </div>
           </form>
