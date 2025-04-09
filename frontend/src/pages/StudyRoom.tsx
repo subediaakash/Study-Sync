@@ -88,9 +88,9 @@ const MOCK_PARTICIPANTS = [
 ];
 
 const StudyRoom = () => {
-  const user = useAtomValue(authAtom);
+  const user = useAtomValue(authAtom) as { id: string };
 
-  const userId = user?.id;
+  const userId = user.id;
 
   const { roomId } = useParams();
   const [activeTab, setActiveTab] = useState("chat");

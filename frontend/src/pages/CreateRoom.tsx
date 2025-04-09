@@ -19,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 interface RoomData {
   name: string;
@@ -73,8 +73,8 @@ const CreateRoom = () => {
       toast.success("Room created successfully!");
       navigate(`/rooms/${data.id}`);
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.details || "Failed to create room");
+    onError: (error: AxiosError) => {
+      toast.error((error.response?.data as string) || "Failed to create room");
     },
   });
 
@@ -143,7 +143,7 @@ const CreateRoom = () => {
     "business",
   ];
 
-  const user = useAtomValue(authAtom);
+  const user = useAtomValue(authAtom) as { id: string };
   console.log("Auth user data:", user);
 
   const userId = user.id;
