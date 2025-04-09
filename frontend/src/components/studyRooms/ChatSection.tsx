@@ -8,13 +8,129 @@ import { v4 as uuidv4 } from "uuid";
 import ChatMessage, { Message } from "../ChatMessage";
 
 interface ChatSectionProps {
-  initialMessages: Message[];
+  userId: string;
+  roomId: string;
 }
 
-const ChatSection = ({ initialMessages }: ChatSectionProps) => {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+const ChatSection = ({ userId, roomId }: ChatSectionProps) => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const ws = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    ws.current = new WebSocket("ws://localhost:8080");
+
+    ws.current.onopen = () => {
+      const joinPayload = {
+        type: "join",
+        userId,
+        roomId,
+      };
+      ws.current?.send(JSON.stringify(joinPayload));
+    };
+
+    ws.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        switch (data.type) {
+          case "chat": {
+            const message: Message = {
+              id: uuidv4(),
+              content: data.message,
+              sender: {
+                name: data.userId === userId ? "You" : `User ${data.userId}`,
+                initials: data.userId === userId ? "YO" : "AN",
+                avatar: "",
+              },
+              timestamp: new Date(data.timestamp),
+              isCurrentUser: data.userId === userId,
+            };
+            setMessages((prev) => [...prev, message]);
+            break;
+          }
+
+          case "user_joined": {
+            const systemMessage: Message = {
+              id: uuidv4(),
+              content: `User ${data.userId} joined the room.`,
+              sender: {
+                name: "System",
+                initials: "S",
+                avatar: "",
+              },
+              timestamp: new Date(data.timestamp),
+              isCurrentUser: false,
+            };
+            setMessages((prev) => [...prev, systemMessage]);
+            break;
+          }
+
+          case "user_left": {
+            const systemMessage: Message = {
+              id: uuidv4(),
+              content: `User ${data.userId} left the room.`,
+              sender: {
+                name: "System",
+                initials: "S",
+                avatar: "",
+              },
+              timestamp: new Date(data.timestamp),
+              isCurrentUser: false,
+            };
+            setMessages((prev) => [...prev, systemMessage]);
+            break;
+          }
+
+          case "room_state": {
+            const participantMsg: Message = {
+              id: uuidv4(),
+              content: `Participants: ${data.participants.join(", ")}`,
+              sender: {
+                name: "System",
+                initials: "S",
+                avatar: "",
+              },
+              timestamp: new Date(data.timestamp),
+              isCurrentUser: false,
+            };
+            setMessages((prev) => [...prev, participantMsg]);
+            break;
+          }
+
+          case "error": {
+            const errorMsg: Message = {
+              id: uuidv4(),
+              content: `Error: ${data.message}`,
+              sender: {
+                name: "System",
+                initials: "S",
+                avatar: "",
+              },
+              timestamp: new Date(),
+              isCurrentUser: false,
+            };
+            setMessages((prev) => [...prev, errorMsg]);
+            break;
+          }
+
+          default:
+            console.warn("Unknown message type:", data.type);
+        }
+      } catch (err) {
+        console.error("Invalid message received", err);
+      }
+    };
+
+    ws.current.onerror = (err) => {
+      console.error("WebSocket error:", err);
+    };
+
+    return () => {
+      ws.current?.close();
+    };
+  }, [roomId, userId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,22 +138,16 @@ const ChatSection = ({ initialMessages }: ChatSectionProps) => {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!newMessage.trim()) return;
 
-    const message: Message = {
-      id: uuidv4(),
-      content: newMessage,
-      sender: {
-        name: "You",
-        initials: "YO",
-        avatar: "",
-      },
-      timestamp: new Date(),
-      isCurrentUser: true,
+    const chatPayload = {
+      type: "chat",
+      userId,
+      roomId,
+      message: newMessage,
     };
 
-    setMessages((prev) => [...prev, message]);
+    ws.current?.send(JSON.stringify(chatPayload));
     setNewMessage("");
   };
 

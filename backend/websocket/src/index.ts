@@ -30,7 +30,12 @@ class WebSocketServer {
               userId = data.userId;
               roomId = data.roomId;
               if (!userId || !roomId) {
-                return ws.send("User ID and room ID are required");
+                return ws.send(
+                  JSON.stringify({
+                    type: "error",
+                    message: "User ID and room ID are required",
+                  })
+                );
               }
               this.roomService.joinRoom(userId, roomId, ws);
               break;

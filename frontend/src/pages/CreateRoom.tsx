@@ -55,8 +55,6 @@ const createRoomAPI = async (roomData: RoomData) => {
 const CreateRoom = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const user = useAtomValue(authAtom);
-  const userId = user?.id;
 
   const [formData, setFormData] = useState({
     roomName: "",
@@ -144,6 +142,11 @@ const CreateRoom = () => {
     "science",
     "business",
   ];
+
+  const user = useAtomValue(authAtom);
+  console.log("Auth user data:", user);
+
+  const userId = user.id;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">

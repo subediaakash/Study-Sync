@@ -2,9 +2,17 @@ import { atom } from "jotai";
 
 import axios from "axios";
 
-export const authAtom = atom(null, (get, set, user) => {
+export const authAtom = atom(null, (get, set, user: User) => {
   set(authAtom, user);
 });
+
+interface User {
+  name: string;
+  id: string;
+  email: string;
+  updatedAt: string;
+  createdAt: string;
+}
 
 export const api = axios.create({
   baseURL: "http://localhost:3000",

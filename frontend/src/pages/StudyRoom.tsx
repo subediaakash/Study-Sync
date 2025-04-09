@@ -11,6 +11,9 @@ import ParticipantsList from "@/components/studyRooms/ParticipantsList";
 import GoalsSection from "@/components/studyRooms/GoalsSection";
 import RoomStatistics from "@/components/studyRooms/RoomStatistics";
 
+import { useAtomValue } from "jotai";
+import { authAtom } from "@/auth/atom";
+
 const MOCK_MESSAGES: Message[] = [
   {
     id: "1",
@@ -85,6 +88,10 @@ const MOCK_PARTICIPANTS = [
 ];
 
 const StudyRoom = () => {
+  const user = useAtomValue(authAtom);
+
+  const userId = user?.id;
+
   const { roomId } = useParams();
   const [activeTab, setActiveTab] = useState("chat");
   const [roomInfo] = useState({
@@ -92,7 +99,7 @@ const StudyRoom = () => {
     category: "Mathematics",
     focusTime: 50,
     breakTime: 10,
-    isOwner: true, // For demo purposes - would be determined by auth
+    isOwner: true,
   });
 
   return (
@@ -125,7 +132,7 @@ const StudyRoom = () => {
               </TabsList>
 
               <TabsContent value="chat" className="flex-1 flex flex-col">
-                <ChatSection initialMessages={MOCK_MESSAGES} />
+                <ChatSection userId={userId} roomId={roomId} />
               </TabsContent>
 
               <TabsContent value="participants" className="flex-1">
