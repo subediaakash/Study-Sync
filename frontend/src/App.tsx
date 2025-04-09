@@ -10,6 +10,7 @@ import SignupPage from "./components/SignupSection";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import CreateRoom from "./pages/CreateRoom";
 import StudyRoom from "./pages/StudyRoom";
+import BrowseRooms from "./pages/BrowseRooms";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/create-rooms" element={<CreateRoom />} />
             <Route path="/rooms/:roomId" element={<StudyRoom />} />{" "}
+            <Route path="/browse-rooms" element={<BrowseRooms />} />
           </Route>
         </Routes>
       </BrowserRouter>

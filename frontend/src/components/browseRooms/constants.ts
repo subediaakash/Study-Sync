@@ -1,0 +1,65 @@
+import { BookOpen, Code, Calculator, Globe, Laptop } from "lucide-react";
+
+export const ROOMS = [
+  {
+    id: 1,
+    name: "Math Study Group",
+    category: "Mathematics",
+    participants: 7,
+    timeRemaining: "37:45",
+    totalTime: "50:00",
+    progress: 75,
+    icon: Calculator,
+  },
+  {
+    id: 2,
+    name: "Programming Workshop",
+    category: "Computer Science",
+    participants: 12,
+    timeRemaining: "45:00",
+    totalTime: "90:00",
+    progress: 50,
+    icon: Code,
+  },
+  {
+    id: 3,
+    name: "Language Practice",
+    category: "Languages",
+    participants: 5,
+    timeRemaining: "25:30",
+    totalTime: "60:00",
+    progress: 42,
+    icon: Globe,
+  },
+  {
+    id: 4,
+    name: "Web Development",
+    category: "Technology",
+    participants: 9,
+    timeRemaining: "55:00",
+    totalTime: "60:00",
+    progress: 92,
+    icon: Laptop,
+  },
+  {
+    id: 5,
+    name: "Literature Discussion",
+    category: "Humanities",
+    participants: 6,
+    timeRemaining: "15:45",
+    totalTime: "30:00",
+    progress: 52,
+    icon: BookOpen,
+  },
+];
+
+export const CATEGORIES = [
+  "All",
+  "Mathematics",
+  "Computer Science",
+  "Languages",
+  "Technology",
+  "Humanities",
+  "Science",
+  "Business",
+];
