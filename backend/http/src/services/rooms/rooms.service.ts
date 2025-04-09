@@ -1,4 +1,4 @@
-import { PrismaClient, RoomCategory } from "@prisma/client";
+import { PrismaClient, RoomCategory, Prisma } from "@prisma/client";
 
 export class RoomService {
   prisma = new PrismaClient();
@@ -340,5 +340,74 @@ export class RoomService {
         details: error.message,
       });
     }
+  }
+
+  // services for different kind of searching
+
+  async findRoomsByCategory(
+    category: RoomCategory,
+    includePrivate: boolean = false
+  ): Promise<any[]> {
+    const whereClause = {
+      category,
+      ...(includePrivate ? {} : { isPrivate: false }),
+    };
+
+    return this.prisma.studyRoom.findMany({
+      where: whereClause,
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        timerSettings: true,
+        _count: {
+          select: {
+            participants: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  async findRoomsByName(
+    name: string,
+    includePrivate: boolean = false
+  ): Promise<any[]> {
+    const whereClause = {
+      name: {
+        contains: name,
+        mode: Prisma.QueryMode.insensitive, // Case-insensitive search
+      },
+      ...(includePrivate ? {} : { isPrivate: false }),
+    };
+
+    return this.prisma.studyRoom.findMany({
+      where: whereClause,
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        timerSettings: true,
+        _count: {
+          select: {
+            participants: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
   }
 }
