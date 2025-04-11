@@ -14,79 +14,6 @@ import RoomStatistics from "@/components/studyRooms/RoomStatistics";
 import { useAtomValue } from "jotai";
 import { authAtom } from "@/auth/atom";
 
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: "1",
-    content:
-      "Welcome to the study room! Let's focus and be productive together.",
-    sender: {
-      name: "Sarah",
-      initials: "SJ",
-      avatar: "",
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-    isCurrentUser: false,
-  },
-  {
-    id: "2",
-    content: "I'm working on calculus problems. Anyone else studying math?",
-    sender: {
-      name: "Michael",
-      initials: "MP",
-      avatar: "",
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 10),
-    isCurrentUser: false,
-  },
-  {
-    id: "3",
-    content: "I'm here to study math too! Currently going through derivatives.",
-    sender: {
-      name: "You",
-      initials: "YO",
-      avatar: "",
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    isCurrentUser: true,
-  },
-  {
-    id: "4",
-    content:
-      "Perfect! I could use some help with integrals later if you have time.",
-    sender: {
-      name: "Michael",
-      initials: "MP",
-      avatar: "",
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 3),
-    isCurrentUser: false,
-  },
-];
-
-const MOCK_PARTICIPANTS = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    initials: "SJ",
-    status: "studying" as const,
-  },
-  {
-    id: "2",
-    name: "Michael Park",
-    initials: "MP",
-    status: "studying" as const,
-  },
-  {
-    id: "3",
-    name: "You",
-    initials: "YO",
-    status: "studying" as const,
-    isCurrentUser: true,
-  },
-  { id: "4", name: "Alex Doe", initials: "AD", status: "break" as const },
-  { id: "5", name: "Jamie Smith", initials: "JS", status: "studying" as const },
-];
-
 const StudyRoom = () => {
   const user = useAtomValue(authAtom) as { id: string };
 
@@ -127,7 +54,7 @@ const StudyRoom = () => {
                   onClick={() => setActiveTab("participants")}
                 >
                   <Users size={16} />
-                  Participants ({MOCK_PARTICIPANTS.length})
+                  Participants
                 </TabsTrigger>
               </TabsList>
 
@@ -136,7 +63,7 @@ const StudyRoom = () => {
               </TabsContent>
 
               <TabsContent value="participants" className="flex-1">
-                <ParticipantsList participants={MOCK_PARTICIPANTS} />
+                <ParticipantsList roomId={roomId} />
               </TabsContent>
             </Tabs>
           </div>
@@ -149,7 +76,7 @@ const StudyRoom = () => {
 
             <GoalsSection />
 
-            <RoomStatistics />
+            <RoomStatistics roomId={roomId} />
           </div>
         </div>
       </div>

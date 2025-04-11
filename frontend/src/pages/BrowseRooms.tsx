@@ -20,7 +20,6 @@ const BrowseRooms = () => {
     DEFAULT: Users,
   };
 
-  // Fetch rooms with React Query
   const {
     data: rooms = [],
     isLoading,
