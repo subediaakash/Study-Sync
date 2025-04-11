@@ -31,4 +31,8 @@ export class RoomController {
   static async removeParticipantFromRoom(req: Request, res: Response) {
     await roomService.removeParticipantFromRoom(req, res);
   }
+
+  static async findRooms(req: Request, res: Response) {
+    await roomService.findRooms(req, res);
+  }
 }

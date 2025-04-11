@@ -1,4 +1,5 @@
 import { PrismaClient, RoomCategory, Prisma } from "@prisma/client";
+import { Request, Response } from "express";
 
 export class RoomService {
   prisma = new PrismaClient();
@@ -185,7 +186,7 @@ export class RoomService {
     const { id } = req.params;
     const { name, category, description, isPrivate, password, timerSettings } =
       req.body;
-    const user = req.user;
+    const user = res.locals.user;
 
     if (!user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -247,7 +248,7 @@ export class RoomService {
 
   async deleteRoom(req: any, res: any) {
     const { id } = req.params;
-    const user = req.user;
+    const user = res.locals.user;
 
     if (!user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -292,10 +293,10 @@ export class RoomService {
     }
   }
 
-  async removeParticipantFromRoom(req: any, res: any) {
+  async removeParticipantFromRoom(req: Request, res: Response) {
     const { participantId } = req.body;
     const { id: roomId } = req.params;
-    const user = req.user;
+    const user = res.locals.user;
 
     if (!user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -344,70 +345,73 @@ export class RoomService {
 
   // services for different kind of searching
 
-  async findRoomsByCategory(
-    category: RoomCategory,
-    includePrivate: boolean = false
-  ): Promise<any[]> {
-    const whereClause = {
-      category,
-      ...(includePrivate ? {} : { isPrivate: false }),
-    };
+  async findRooms(req: Request, res: Response) {
+    const { category, name } = req.query;
+    console.log("Request query:", req.query);
 
-    return this.prisma.studyRoom.findMany({
-      where: whereClause,
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        timerSettings: true,
-        _count: {
-          select: {
-            participants: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  }
+    const includePrivate = req.query.includePrivate === "true";
+    const user = res.locals.user;
 
-  async findRoomsByName(
-    name: string,
-    includePrivate: boolean = false
-  ): Promise<any[]> {
-    const whereClause = {
-      name: {
-        contains: name,
-        mode: Prisma.QueryMode.insensitive, // Case-insensitive search
-      },
-      ...(includePrivate ? {} : { isPrivate: false }),
-    };
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-    return this.prisma.studyRoom.findMany({
-      where: whereClause,
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    try {
+      let whereClause: any = {};
+
+      if (!includePrivate) {
+        whereClause.isPrivate = false;
+      }
+
+      if (category && category !== "All") {
+        whereClause.category = category as RoomCategory;
+      }
+
+      if (name) {
+        whereClause.name = {
+          contains: typeof name === "string" ? name : String(name),
+          mode: Prisma.QueryMode.insensitive,
+        };
+      }
+
+      console.log("Where clause:", whereClause);
+
+      // First, check if any rooms exist at all
+      const roomCount = await this.prisma.studyRoom.count();
+      console.log("Total rooms in database:", roomCount);
+
+      // Now run the actual query
+      const rooms = await this.prisma.studyRoom.findMany({
+        where: whereClause,
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          timerSettings: true,
+          _count: {
+            select: {
+              participants: true,
+            },
           },
         },
-        timerSettings: true,
-        _count: {
-          select: {
-            participants: true,
-          },
+        orderBy: {
+          createdAt: "desc",
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+      });
+
+      console.log("Found rooms:", rooms.length);
+
+      return res.status(200).json(rooms);
+    } catch (error: any) {
+      console.error("Error finding rooms:", error);
+      return res.status(500).json({
+        error: "Failed to find rooms",
+        details: error.message,
+      });
+    }
   }
 }
