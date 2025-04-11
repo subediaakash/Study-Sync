@@ -170,7 +170,6 @@ export class RoomService {
               email: true,
             },
           },
-          owner: true,
           timerSettings: true,
         },
       });
@@ -211,7 +210,7 @@ export class RoomService {
         (p) => p.id === user.id
       );
       if (isAlreadyParticipant) {
-        return res.status(400).json({ error: "Already a participant" });
+        return res.status(200).json({ message: "Already a participant" });
       }
 
       const updatedRoom = await this.prisma.studyRoom.update({
@@ -237,6 +236,42 @@ export class RoomService {
       return res.status(500).json({
         error: "Failed to join room",
         details: errorMessage,
+      });
+    }
+  }
+
+  async getParticipants(req: any, res: any) {
+    const { id: roomId } = req.params;
+    const user = res.locals.user;
+
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const room = await this.prisma.studyRoom.findUnique({
+        where: { id: roomId },
+        include: {
+          participants: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      return res.status(200).json(room.participants);
+    } catch (error: any) {
+      console.error("Error fetching participants:", error);
+      return res.status(500).json({
+        error: "Failed to fetch participants",
+        details: error.message,
       });
     }
   }
@@ -435,11 +470,9 @@ export class RoomService {
 
       console.log("Where clause:", whereClause);
 
-      // First, check if any rooms exist at all
       const roomCount = await this.prisma.studyRoom.count();
       console.log("Total rooms in database:", roomCount);
 
-      // Now run the actual query
       const rooms = await this.prisma.studyRoom.findMany({
         where: whereClause,
         include: {
@@ -472,5 +505,29 @@ export class RoomService {
         details: error.message,
       });
     }
+  }
+
+  // services to extract and modify room features
+
+  async getTimerSettings(req: Request, res: Response) {
+    const { id: roomId } = req.params;
+    const roomTimeSettings = await this.prisma.studyRoom.findUnique({
+      where: { id: roomId },
+      select: {
+        timerSettings: {
+          select: {
+            id: true,
+            focusTime: true,
+            breakTime: true,
+            remainingTime: true,
+          },
+        },
+      },
+    });
+
+    if (!roomTimeSettings) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    res.status(200).json(roomTimeSettings.timerSettings);
   }
 }

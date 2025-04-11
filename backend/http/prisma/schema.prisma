@@ -54,12 +54,13 @@ model StudyRoom {
 }
 
 model TimerSetting {
-  id        String     @id @default(uuid())
-  name      String     @default("Default Timer")
-  studyRoom StudyRoom?
-  focusTime Int        @default(25)
-  breakTime Int        @default(5)
-  createdAt DateTime   @default(now())
+  id            String     @id @default(uuid())
+  name          String     @default("Default Timer")
+  studyRoom     StudyRoom?
+  focusTime     Int        @default(25)
+  remainingTime Int        @default(5)
+  breakTime     Int        @default(5)
+  createdAt     DateTime   @default(now())
 }
 
 model StudySession {

@@ -22,3 +22,7 @@ roomRouter.delete(
   "/:id/participants",
   RoomController.removeParticipantFromRoom
 );
+
+roomRouter.get("/:id/participants", RoomController.getParticipants);
+
+roomRouter.get("/:id/time", RoomController.getTimerSettings);

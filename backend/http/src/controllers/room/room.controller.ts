@@ -39,4 +39,10 @@ export class RoomController {
   static async findRooms(req: Request, res: Response) {
     await roomService.findRooms(req, res);
   }
+  static async getParticipants(req: Request, res: Response) {
+    await roomService.getParticipants(req, res);
+  }
+  static async getTimerSettings(req: Request, res: Response) {
+    await roomService.getTimerSettings(req, res);
+  }
 }
