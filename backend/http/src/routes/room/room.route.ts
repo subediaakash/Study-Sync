@@ -7,6 +7,7 @@ export const roomRouter = Router();
 roomRouter.use(isAuthenticated);
 
 roomRouter.get("/find", RoomController.findRooms);
+roomRouter.post("/join/:id", RoomController.joinRoom);
 
 roomRouter.post("/", RoomController.createRoom);
 roomRouter.get("/", RoomController.getRooms);

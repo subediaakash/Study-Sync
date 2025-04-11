@@ -16,6 +16,10 @@ export class RoomController {
     await roomService.getRoomById(req, res);
   }
 
+  static async joinRoom(req: Request, res: Response) {
+    await roomService.joinRoom(req, res);
+  }
+
   static async addParticipantToRoom(req: Request, res: Response) {
     await roomService.addParticipantToRoom(req, res);
   }

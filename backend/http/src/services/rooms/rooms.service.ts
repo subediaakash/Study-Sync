@@ -5,15 +5,12 @@ export class RoomService {
   prisma = new PrismaClient();
 
   async createRoom(req: any, res: any) {
-    const {
-      name,
-      ownerId,
-      category,
-      description,
-      isPrivate,
-      password,
-      timerSettings,
-    } = req.body;
+    const ownerId = res.locals.user.id;
+    if (!ownerId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { name, category, description, isPrivate, password, timerSettings } =
+      req.body;
 
     try {
       const newTimerSetting = await this.prisma.timerSetting.create({
@@ -23,7 +20,6 @@ export class RoomService {
           breakTime: timerSettings?.breakTime || 5,
         },
       });
-
       const newRoom = await this.prisma.studyRoom.create({
         data: {
           name,
@@ -33,7 +29,14 @@ export class RoomService {
           isPrivate: isPrivate || false,
           password,
           timerSettingId: newTimerSetting.id,
+          participants: {
+            connect: { id: ownerId },
+          },
         },
+      });
+
+      const fetchedRoom = await this.prisma.studyRoom.findUnique({
+        where: { id: newRoom.id },
         include: {
           owner: true,
           timerSettings: true,
@@ -41,7 +44,7 @@ export class RoomService {
         },
       });
 
-      return res.status(201).json(newRoom);
+      return res.status(201).json(fetchedRoom);
     } catch (error: any) {
       console.error("Error creating room:", error);
       res
@@ -178,6 +181,62 @@ export class RoomService {
       return res.status(500).json({
         error: "Failed to add person to room",
         details: error.message,
+      });
+    }
+  }
+
+  async joinRoom(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id: roomId } = req.params;
+      const user = res.locals.user;
+
+      if (!user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const room = await this.prisma.studyRoom.findUnique({
+        where: { id: roomId },
+        include: { participants: true },
+      });
+
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      if (room.isPrivate && room.password !== req.body.password) {
+        return res.status(403).json({ error: "Incorrect password" });
+      }
+
+      const isAlreadyParticipant = room.participants.some(
+        (p) => p.id === user.id
+      );
+      if (isAlreadyParticipant) {
+        return res.status(400).json({ error: "Already a participant" });
+      }
+
+      const updatedRoom = await this.prisma.studyRoom.update({
+        where: { id: roomId },
+        data: {
+          participants: {
+            connect: { id: user.id },
+          },
+        },
+        include: {
+          participants: true,
+          owner: true,
+          timerSettings: true,
+        },
+      });
+
+      return res.status(200).json(updatedRoom);
+    } catch (error) {
+      console.error("Error joining room:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      return res.status(500).json({
+        error: "Failed to join room",
+        details: errorMessage,
       });
     }
   }
