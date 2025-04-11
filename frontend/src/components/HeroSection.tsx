@@ -32,7 +32,10 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Button className="bg-theme-blue-medium hover:bg-theme-blue-dark text-white px-8 py-6 text-lg">
+              <Button
+                className="bg-theme-blue-medium hover:bg-theme-blue-dark text-white px-8 py-6 text-lg"
+                onClick={() => navigate("/create-rooms")}
+              >
                 Start Studying Now
               </Button>
               <Button
