@@ -28,7 +28,7 @@ const BrowseRooms = () => {
   } = useQuery({
     queryKey: ["rooms", searchQuery, selectedCategory],
     queryFn: async () => {
-      let url = "http://localhost:3000/api/room/find/";
+      let url = "http://localhost:3000/api/room/find?";
 
       if (searchQuery) {
         url += `name=${searchQuery}&`;

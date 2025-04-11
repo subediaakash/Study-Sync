@@ -37,7 +37,7 @@ export const RoomCard = ({ room }) => {
               Details
             </Button>
           </Link>
-          <Link to={`/room/${room.id}`} className="flex-1">
+          <Link to={`/rooms/${room.id}`} className="flex-1">
             <Button className="w-full bg-study-blue hover:bg-study-darkBlue">
               Join Room
             </Button>

@@ -1,18 +1,20 @@
-import React, { useState, useRef, useEffect } from "react";
+import type React from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import ChatMessage, { Message } from "../ChatMessage";
+import ChatMessage, { type Message } from "../ChatMessage";
 
 interface ChatSectionProps {
   userId: string;
   roomId: string;
+  className?: string;
 }
 
-const ChatSection = ({ userId, roomId }: ChatSectionProps) => {
+const ChatSection = ({ userId, roomId, className = "" }: ChatSectionProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -152,34 +154,40 @@ const ChatSection = ({ userId, roomId }: ChatSectionProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 flex-1 flex flex-col mb-4">
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))}
-          <div ref={messagesEndRef} />
+    <div
+      className={`bg-white rounded-lg shadow-sm flex flex-col ${className}`}
+      style={{ height: "calc(100vh - 180px)" }}
+    >
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <ScrollArea className="flex-1 h-full" type="always">
+          <div className="p-4 pb-2">
+            {messages.map((message) => (
+              <ChatMessage key={message.id} message={message} />
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        <div className="p-4 pt-2">
+          <Separator className="mb-3" />
+          <form onSubmit={handleSendMessage} className="flex gap-2">
+            <Input
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className="flex-1"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!newMessage.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Send size={18} />
+            </Button>
+          </form>
         </div>
-      </ScrollArea>
-
-      <Separator className="my-3" />
-
-      <form onSubmit={handleSendMessage} className="flex gap-2">
-        <Input
-          placeholder="Type a message..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          className="flex-1"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={!newMessage.trim()}
-          className="bg-study-blue hover:bg-study-darkBlue"
-        >
-          <Send size={18} />
-        </Button>
-      </form>
+      </div>
     </div>
   );
 };
