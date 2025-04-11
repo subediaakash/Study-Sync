@@ -530,4 +530,33 @@ export class RoomService {
     }
     res.status(200).json(roomTimeSettings.timerSettings);
   }
+
+  async updateTimerSettings(req: Request, res: Response) {
+    try {
+      const { id: roomId } = req.params;
+      const { focusTime, breakTime, remainingTime, isPaused } = req.body;
+
+      const updateData: any = {};
+      if (focusTime !== undefined) updateData.focusTime = focusTime;
+      if (breakTime !== undefined) updateData.breakTime = breakTime;
+      if (remainingTime !== undefined) updateData.remainingTime = remainingTime;
+      if (isPaused !== undefined) updateData.isPaused = isPaused;
+
+      const updatedTimerSettings = await this.prisma.timerSetting.update({
+        where: { id: roomId },
+        data: updateData,
+      });
+
+      return res.status(200).json(updatedTimerSettings);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      console.error("Error updating timer settings:", error);
+      return res.status(500).json({ error: "Failed to update timer settings" });
+    }
+  }
 }

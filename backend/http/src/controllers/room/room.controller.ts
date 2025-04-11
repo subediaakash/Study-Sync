@@ -45,4 +45,8 @@ export class RoomController {
   static async getTimerSettings(req: Request, res: Response) {
     await roomService.getTimerSettings(req, res);
   }
+
+  static async updateTimerSettings(req: Request, res: Response) {
+    await roomService.updateTimerSettings(req, res);
+  }
 }
