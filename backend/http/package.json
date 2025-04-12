@@ -7,7 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "postinstall": "prisma generate",
+    "prisma:docker": "pnpm run prisma:migrate ",
+    "prisma:migrate": " pnpx prisma migrate dev",
+    "dev:docker": "pnpm run prisma:docker & packageManager run dev"
   },
   "keywords": [],
   "author": "",

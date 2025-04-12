@@ -1,0 +1,19 @@
+# Base image
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml ./
+
+RUN npm install -g pnpm
+RUN pnpm install
+
+COPY . .
+
+RUN npx prisma migrate && npx prisma generate
+
+RUN pnpm build
+
+EXPOSE 3000
+
+CMD [ "pnpm", "run", "dev:docker" ]
