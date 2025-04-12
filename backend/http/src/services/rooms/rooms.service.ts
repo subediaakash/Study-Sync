@@ -507,8 +507,6 @@ export class RoomService {
     }
   }
 
-  // services to extract and modify room features
-
   async getTimerSettings(req: Request, res: Response) {
     const { id: roomId } = req.params;
     const roomTimeSettings = await this.prisma.studyRoom.findUnique({
@@ -536,6 +534,15 @@ export class RoomService {
       const { id: roomId } = req.params;
       const { focusTime, breakTime, remainingTime, isPaused } = req.body;
 
+      const studyRoom = await this.prisma.studyRoom.findUnique({
+        where: { id: roomId },
+        select: { timerSettingId: true },
+      });
+
+      if (!studyRoom) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
       const updateData: any = {};
       if (focusTime !== undefined) updateData.focusTime = focusTime;
       if (breakTime !== undefined) updateData.breakTime = breakTime;
@@ -543,7 +550,7 @@ export class RoomService {
       if (isPaused !== undefined) updateData.isPaused = isPaused;
 
       const updatedTimerSettings = await this.prisma.timerSetting.update({
-        where: { id: roomId },
+        where: { id: studyRoom.timerSettingId },
         data: updateData,
       });
 
@@ -553,7 +560,9 @@ export class RoomService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2025"
       ) {
-        return res.status(404).json({ error: "Room not found" });
+        return res
+          .status(404)
+          .json({ error: "Timer settings not found", details: error.message });
       }
       console.error("Error updating timer settings:", error);
       return res.status(500).json({ error: "Failed to update timer settings" });
