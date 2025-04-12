@@ -1,75 +1,141 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RefreshCw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface PomodoroTimerProps {
-  initialFocusTime: number;
-  initialBreakTime: number;
+interface TimeSettings {
+  id: string;
+  focusTime: number;
+  breakTime: number;
+  remainingTime: number;
+  isPaused: boolean;
 }
 
-type TimerMode = "focus" | "break";
+interface PomodoroTimerProps {
+  roomId: string;
+}
 
-const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
-  initialFocusTime = 25,
-  initialBreakTime = 5,
-}) => {
-  const [mode, setMode] = useState<TimerMode>("focus");
-  const [timeLeft, setTimeLeft] = useState(initialFocusTime * 60);
-  const [totalTime, setTotalTime] = useState(initialFocusTime * 60);
-  const [isActive, setIsActive] = useState(false);
+const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
+  const [timeSettings, setTimeSettings] = useState<TimeSettings | null>(null);
+  const [localTimeLeft, setLocalTimeLeft] = useState<number>(0);
+  const [mode, setMode] = useState<"focus" | "break">("focus");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  // Reset timer when initial times change
-  useEffect(() => {
-    if (mode === "focus") {
-      setTimeLeft(initialFocusTime * 60);
-      setTotalTime(initialFocusTime * 60);
-    } else {
-      setTimeLeft(initialBreakTime * 60);
-      setTotalTime(initialBreakTime * 60);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdatedRef = useRef<number>(Date.now());
+
+  const fetchTimeSettings = async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/room/${roomId}/time`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      const settings = data.timerSettings || data;
+
+      const parsedSettings: TimeSettings = {
+        ...settings,
+        isPaused: settings.isPaused !== undefined ? settings.isPaused : true,
+      };
+
+      setTimeSettings(parsedSettings);
+      setLocalTimeLeft(parsedSettings.remainingTime * 60);
+      setMode(parsedSettings.remainingTime <= 0 ? "break" : "focus");
+      lastUpdatedRef.current = Date.now();
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setIsError(true);
+      setIsLoading(false);
     }
-  }, [initialFocusTime, initialBreakTime, mode]);
+  };
 
-  // Timer effect
-  useEffect(() => {
-    let interval: number | null = null;
-
-    if (isActive && timeLeft > 0) {
-      interval = window.setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (isActive && timeLeft === 0) {
-      setIsActive(false);
-      // When timer finishes, switch modes
-      if (mode === "focus") {
-        setMode("break");
-        setTimeLeft(initialBreakTime * 60);
-        setTotalTime(initialBreakTime * 60);
-      } else {
-        setMode("focus");
-        setTimeLeft(initialFocusTime * 60);
-        setTotalTime(initialFocusTime * 60);
+  const updateTimeSettings = async (data: Partial<TimeSettings>) => {
+    try {
+      const dataToSend = { ...data };
+      if (dataToSend.remainingTime !== undefined) {
+        dataToSend.remainingTime = Math.ceil(dataToSend.remainingTime / 60);
       }
+
+      await fetch(`http://localhost:3000/api/room/update-time/${roomId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSend),
+      });
+    } catch (err) {
+      console.error("Update error:", err);
     }
+  };
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive, timeLeft, mode, initialFocusTime, initialBreakTime]);
+  const startTimer = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
-  const toggleTimer = () => {
-    setIsActive(!isActive);
+    intervalRef.current = setInterval(() => {
+      if (!timeSettings || timeSettings.isPaused) return;
+
+      const now = Date.now();
+      const elapsed = Math.floor((now - lastUpdatedRef.current) / 1000);
+      const newTimeLeft = Math.max(0, localTimeLeft - elapsed);
+
+      if (newTimeLeft <= 0) {
+        const nextMode = mode === "focus" ? "break" : "focus";
+        const nextDuration =
+          (nextMode === "focus"
+            ? timeSettings.focusTime
+            : timeSettings.breakTime) * 60;
+
+        setMode(nextMode);
+        setLocalTimeLeft(nextDuration);
+        lastUpdatedRef.current = now;
+
+        updateTimeSettings({
+          remainingTime: nextDuration,
+          isPaused: false,
+        });
+      } else {
+        setLocalTimeLeft(newTimeLeft);
+      }
+
+      lastUpdatedRef.current = now;
+    }, 1000);
+  };
+
+  const togglePause = () => {
+    if (!timeSettings) return;
+
+    const newPauseState = !timeSettings.isPaused;
+
+    updateTimeSettings({
+      remainingTime: localTimeLeft,
+      isPaused: newPauseState,
+    });
+
+    setTimeSettings({ ...timeSettings, isPaused: newPauseState });
+    lastUpdatedRef.current = Date.now();
+
+    if (!newPauseState) startTimer();
   };
 
   const resetTimer = () => {
-    setIsActive(false);
-    if (mode === "focus") {
-      setTimeLeft(initialFocusTime * 60);
-    } else {
-      setTimeLeft(initialBreakTime * 60);
-    }
+    if (!timeSettings) return;
+
+    const newTime = timeSettings.focusTime * 60;
+    updateTimeSettings({
+      remainingTime: newTime,
+      isPaused: true,
+    });
+
+    setLocalTimeLeft(newTime);
+    setMode("focus");
+    setTimeSettings({ ...timeSettings, isPaused: true });
+    lastUpdatedRef.current = Date.now();
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
-  // Format time for display
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -78,7 +144,93 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       .padStart(2, "0")}`;
   };
 
-  const progress = ((totalTime - timeLeft) / totalTime) * 100;
+  useEffect(() => {
+    fetchTimeSettings();
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!timeSettings || timeSettings.isPaused) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      return;
+    }
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    let tickCount = 0;
+
+    intervalRef.current = setInterval(() => {
+      setLocalTimeLeft((prev) => {
+        if (prev <= 0) {
+          // Switch modes
+          const nextMode = mode === "focus" ? "break" : "focus";
+          const nextDuration =
+            (nextMode === "focus"
+              ? timeSettings.focusTime
+              : timeSettings.breakTime) * 60;
+
+          setMode(nextMode);
+          setLocalTimeLeft(nextDuration);
+          lastUpdatedRef.current = Date.now();
+
+          // Update server immediately on mode switch
+          updateTimeSettings({
+            remainingTime: nextDuration,
+            isPaused: false,
+          });
+
+          return nextDuration;
+        }
+
+        const newTime = prev - 1;
+        tickCount++;
+
+        if (tickCount >= 4) {
+          updateTimeSettings({
+            remainingTime: newTime, // Will be converted to minutes in updateTimeSettings
+            isPaused: false,
+          });
+          tickCount = 0;
+        }
+
+        return newTime;
+      });
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [timeSettings?.isPaused, mode]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <Skeleton className="h-6 w-3/4 mb-4" />
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-12 w-full mb-4" />
+        <div className="flex justify-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-md" />
+          <Skeleton className="h-10 w-24 rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !timeSettings) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <p className="text-red-500">Failed to load timer</p>
+      </div>
+    );
+  }
+
+  const currentDuration =
+    mode === "focus"
+      ? timeSettings.focusTime * 60
+      : timeSettings.breakTime * 60;
+  const progress = ((currentDuration - localTimeLeft) / currentDuration) * 100;
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4">
@@ -86,23 +238,23 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         <div className="flex justify-between text-sm mb-1">
           <span
             className={`font-medium ${
-              mode === "focus" ? "text-study-blue" : "text-gray-500"
+              mode === "focus" ? "text-blue-600" : "text-gray-500"
             }`}
           >
-            Focus Time
+            Focus: {timeSettings.focusTime}m
           </span>
           <span
             className={`font-medium ${
-              mode === "break" ? "text-green-500" : "text-gray-500"
+              mode === "break" ? "text-green-600" : "text-gray-500"
             }`}
           >
-            Break Time
+            Break: {timeSettings.breakTime}m
           </span>
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full ${
-              mode === "focus" ? "bg-study-blue" : "bg-green-500"
+              mode === "focus" ? "bg-blue-600" : "bg-green-600"
             }`}
             style={{ width: `${progress}%` }}
           ></div>
@@ -110,7 +262,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       </div>
 
       <div className="flex justify-center mb-4">
-        <div className="text-4xl font-bold">{formatTime(timeLeft)}</div>
+        <div className="text-4xl font-bold">{formatTime(localTimeLeft)}</div>
       </div>
 
       <div className="flex justify-center gap-3">
@@ -126,19 +278,19 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         <Button
           size="lg"
           className={
-            isActive
-              ? "bg-red-500 hover:bg-red-600"
-              : "bg-study-blue hover:bg-study-darkBlue"
+            timeSettings.isPaused
+              ? "bg-green-600 hover:bg-green-700"
+              : "bg-blue-600 hover:bg-blue-700"
           }
-          onClick={toggleTimer}
+          onClick={togglePause}
         >
-          {isActive ? (
+          {timeSettings.isPaused ? (
             <>
-              <Pause size={16} className="mr-2" /> Pause
+              <Play size={16} className="mr-2" /> Resume
             </>
           ) : (
             <>
-              <Play size={16} className="mr-2" /> Start
+              <Pause size={16} className="mr-2" /> Pause
             </>
           )}
         </Button>
@@ -146,8 +298,8 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
 
       <div className="text-center mt-3">
         <span className="text-sm text-gray-500">
-          {mode === "focus" ? "Focus" : "Break"} mode: {formatTime(timeLeft)}{" "}
-          remaining
+          {mode === "focus" ? "Focus" : "Break"} mode •{" "}
+          {timeSettings.isPaused ? "Paused" : "Running"}
         </span>
       </div>
     </div>

@@ -69,10 +69,7 @@ const StudyRoom = () => {
           </div>
 
           <div className="space-y-6">
-            <PomodoroTimer
-              initialFocusTime={roomInfo.focusTime}
-              initialBreakTime={roomInfo.breakTime}
-            />
+            <PomodoroTimer roomId={roomId} />
 
             <GoalsSection />
 
