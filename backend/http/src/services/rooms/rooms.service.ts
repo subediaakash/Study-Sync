@@ -1,10 +1,9 @@
-import { PrismaClient, RoomCategory, Prisma } from "@prisma/client";
+import { RoomCategory, Prisma } from "@prisma/client";
 import { Request, Response } from "express";
+import { prisma } from "../../lib/db";
 
 export class RoomService {
-  prisma = new PrismaClient();
-
-  async createRoom(req: any, res: any) {
+  async createRoom(req: Request, res: Response) {
     const ownerId = res.locals.user.id;
     if (!ownerId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -13,14 +12,14 @@ export class RoomService {
       req.body;
 
     try {
-      const newTimerSetting = await this.prisma.timerSetting.create({
+      const newTimerSetting = await prisma.timerSetting.create({
         data: {
           name: timerSettings?.name || "Default Timer",
           focusTime: timerSettings?.focusTime || 25,
           breakTime: timerSettings?.breakTime || 5,
         },
       });
-      const newRoom = await this.prisma.studyRoom.create({
+      const newRoom = await prisma.studyRoom.create({
         data: {
           name,
           ownerId,
@@ -35,7 +34,7 @@ export class RoomService {
         },
       });
 
-      const fetchedRoom = await this.prisma.studyRoom.findUnique({
+      const fetchedRoom = await prisma.studyRoom.findUnique({
         where: { id: newRoom.id },
         include: {
           owner: true,
@@ -53,9 +52,9 @@ export class RoomService {
     }
   }
 
-  async getRooms(req: any, res: any) {
+  async getRooms(req: Request, res: Response) {
     try {
-      const rooms = await this.prisma.studyRoom.findMany({
+      const rooms = await prisma.studyRoom.findMany({
         include: {
           owner: {
             select: {
@@ -81,10 +80,10 @@ export class RoomService {
     }
   }
 
-  async getRoomById(req: any, res: any) {
+  async getRoomById(req: Request, res: Response) {
     const { id } = req.params;
     try {
-      const room = await this.prisma.studyRoom.findUnique({
+      const room = await prisma.studyRoom.findUnique({
         where: { id },
         include: {
           owner: {
@@ -117,7 +116,7 @@ export class RoomService {
     }
   }
 
-  async addParticipantToRoom(req: any, res: any) {
+  async addParticipantToRoom(req: Request, res: Response) {
     const { participantId } = req.body;
     const { id: roomId } = req.params;
     const user = res.locals.user;
@@ -127,7 +126,7 @@ export class RoomService {
     }
 
     try {
-      const room = await this.prisma.studyRoom.findUnique({
+      const room = await prisma.studyRoom.findUnique({
         where: { id: roomId },
         include: {
           participants: true,
@@ -155,7 +154,7 @@ export class RoomService {
         });
       }
 
-      const updatedRoom = await this.prisma.studyRoom.update({
+      const updatedRoom = await prisma.studyRoom.update({
         where: { id: roomId },
         data: {
           participants: {
@@ -193,7 +192,7 @@ export class RoomService {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const room = await this.prisma.studyRoom.findUnique({
+      const room = await prisma.studyRoom.findUnique({
         where: { id: roomId },
         include: { participants: true },
       });
@@ -213,7 +212,7 @@ export class RoomService {
         return res.status(200).json({ message: "Already a participant" });
       }
 
-      const updatedRoom = await this.prisma.studyRoom.update({
+      const updatedRoom = await prisma.studyRoom.update({
         where: { id: roomId },
         data: {
           participants: {
@@ -249,7 +248,7 @@ export class RoomService {
     }
 
     try {
-      const room = await this.prisma.studyRoom.findUnique({
+      const room = await prisma.studyRoom.findUnique({
         where: { id: roomId },
         include: {
           participants: {
@@ -287,7 +286,7 @@ export class RoomService {
     }
 
     try {
-      const room = await this.prisma.studyRoom.findUnique({
+      const room = await prisma.studyRoom.findUnique({
         where: { id },
         include: { timerSettings: true },
       });
@@ -304,7 +303,7 @@ export class RoomService {
       }
 
       if (timerSettings) {
-        await this.prisma.timerSetting.update({
+        await prisma.timerSetting.update({
           where: { id: room.timerSettingId },
           data: {
             name: timerSettings.name,
@@ -314,7 +313,7 @@ export class RoomService {
         });
       }
 
-      const updatedRoom = await this.prisma.studyRoom.update({
+      const updatedRoom = await prisma.studyRoom.update({
         where: { id },
         data: {
           name,
@@ -349,7 +348,7 @@ export class RoomService {
     }
 
     try {
-      const room = await this.prisma.studyRoom.findUnique({
+      const room = await prisma.studyRoom.findUnique({
         where: { id },
         include: { timerSettings: true },
       });
@@ -365,15 +364,15 @@ export class RoomService {
         });
       }
 
-      await this.prisma.studySession.deleteMany({
+      await prisma.studySession.deleteMany({
         where: { studyRoomId: id },
       });
 
-      await this.prisma.studyRoom.delete({
+      await prisma.studyRoom.delete({
         where: { id },
       });
 
-      await this.prisma.timerSetting.delete({
+      await prisma.timerSetting.delete({
         where: { id: room.timerSettingId },
       });
 
@@ -397,7 +396,7 @@ export class RoomService {
     }
 
     try {
-      const room = await this.prisma.studyRoom.findUnique({
+      const room = await prisma.studyRoom.findUnique({
         where: { id: roomId },
       });
 
@@ -413,7 +412,7 @@ export class RoomService {
         });
       }
 
-      const updatedRoom = await this.prisma.studyRoom.update({
+      const updatedRoom = await prisma.studyRoom.update({
         where: { id: roomId },
         data: {
           participants: {
@@ -470,10 +469,10 @@ export class RoomService {
 
       console.log("Where clause:", whereClause);
 
-      const roomCount = await this.prisma.studyRoom.count();
+      const roomCount = await prisma.studyRoom.count();
       console.log("Total rooms in database:", roomCount);
 
-      const rooms = await this.prisma.studyRoom.findMany({
+      const rooms = await prisma.studyRoom.findMany({
         where: whereClause,
         include: {
           owner: {
@@ -509,7 +508,7 @@ export class RoomService {
 
   async getTimerSettings(req: Request, res: Response) {
     const { id: roomId } = req.params;
-    const roomTimeSettings = await this.prisma.studyRoom.findUnique({
+    const roomTimeSettings = await prisma.studyRoom.findUnique({
       where: { id: roomId },
       select: {
         timerSettings: {
@@ -535,7 +534,7 @@ export class RoomService {
       const { id: roomId } = req.params;
       const { focusTime, breakTime, remainingTime, isPaused } = req.body;
 
-      const studyRoom = await this.prisma.studyRoom.findUnique({
+      const studyRoom = await prisma.studyRoom.findUnique({
         where: { id: roomId },
         select: { timerSettingId: true },
       });
@@ -550,7 +549,7 @@ export class RoomService {
       if (remainingTime !== undefined) updateData.remainingTime = remainingTime;
       if (isPaused !== undefined) updateData.isPaused = isPaused;
 
-      const updatedTimerSettings = await this.prisma.timerSetting.update({
+      const updatedTimerSettings = await prisma.timerSetting.update({
         where: { id: studyRoom.timerSettingId },
         data: updateData,
       });
