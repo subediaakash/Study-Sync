@@ -518,6 +518,7 @@ export class RoomService {
             focusTime: true,
             breakTime: true,
             remainingTime: true,
+            isPaused: true,
           },
         },
       },
