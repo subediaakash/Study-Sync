@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:13
+    image: postgres:13-alpine
     container_name: postgres_db
     ports:
       - "5432:5432"
@@ -16,5 +16,39 @@ services:
       timeout: 5s
       retries: 5
 
+  http:
+    container_name: backend-http
+    build:
+      context: ./http
+      dockerfile: Dockerfile
+    env_file:
+      - ./http/.env
+    ports:
+      - "3000:3000"
+      - "5555:5555"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./http:/usr/src/app
+      - /usr/src/app/node_modules
+
+  websockets:
+    container_name: websockets
+    restart: always
+    build:
+      context: ./websocket
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./websocket:/usr/src/app
+      - /usr/src/app/node_modules
+
+
 volumes:
   postgres_data:
+    external: false
