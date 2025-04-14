@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "postinstall": "prisma generate",
-    "prisma:docker": "pnpm run prisma:migrate",
-    "prisma:migrate": " pnpx prisma migrate dev"
+    "studio": "npx prisma studio",
+    "postinstall": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:docker": "pnpm postinstall && pnpm prisma:migrate",
+    "dev:docker": "pnpm prisma:docker && concurrently \"pnpm studio\" \"pnpm dev\""
   },
   "keywords": [],
   "author": "",
@@ -23,7 +24,6 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "prisma": "^6.5.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -32,7 +32,9 @@
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.14.0",
+    "concurrently": "^9.1.2",
     "nodemon": "^3.1.9",
+    "prisma": "^6.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }

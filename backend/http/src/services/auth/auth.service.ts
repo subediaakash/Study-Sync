@@ -1,11 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { UserSchema } from "../../zod/userSchema.zod";
-import { get } from "http";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../lib/db";
 
 export class AuthService {
   async signup(req: Request, res: Response): Promise<void> {
