@@ -1,22 +1,14 @@
 # Base image
-FROM node:23-alpine
+FROM node:20-alpine
 
-WORKDIR /app
-ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
+WORKDIR /usr/src/app
 
 COPY package.json pnpm-lock.yaml ./
-COPY prisma .
+COPY prisma ./prisma
 
-RUN npm install -g pnpm
-RUN pnpm install
-
-RUN DATABASE_URL=${DATABASE_URL} pnpm dlx prisma generate
+RUN corepack enable pnpm
+RUN pnpm install --ignore-scripts
 
 COPY . .
 
-RUN pnpm build
-
-EXPOSE 3000
-
-CMD [ "pnpm", "start" ]
+CMD [ "pnpm", "dev:docker" ]
