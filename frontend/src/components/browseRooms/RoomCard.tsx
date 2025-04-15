@@ -29,13 +29,11 @@ export const RoomCard = ({ room }) => {
       const data = await response.json();
 
       if (!response.ok && response.status !== 400) {
-        // Handle general errors
         setError(data.message || "Failed to join room");
         setIsJoining(false);
         return;
       }
 
-      // Navigate to the room either if join was successful or if user is already a participant
       navigate(`/rooms/${room.id}`);
     } catch (error) {
       setError("Network error when trying to join the room");
