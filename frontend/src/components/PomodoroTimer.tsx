@@ -40,7 +40,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
   const fetchTimeSettings = async () => {
     try {
-      // Skip polling if local update is in progress
       if (isLocalUpdate) return;
 
       const res = await fetch(`http://localhost:3000/api/room/${roomId}/time`, {
@@ -56,14 +55,11 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
         isPaused: settings.isPaused !== undefined ? settings.isPaused : true,
       };
 
-      // Only apply server time during initial load or when timer is paused
-      const serverTimeLeft = parsedSettings.remainingTime * 60; // convert to seconds
+      const serverTimeLeft = parsedSettings.remainingTime * 60;
       const currentMode = serverTimeLeft <= 0 ? "break" : "focus";
 
       setTimeSettings(parsedSettings);
 
-      // Only update local time from server on initial load or when paused
-      // This prevents overriding the local countdown
       if (initialLoadRef.current || parsedSettings.isPaused) {
         setLocalTimeLeft(serverTimeLeft);
         setMode(currentMode);
@@ -72,9 +68,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
       setIsLoading(false);
       setLastServerSync(Date.now());
-
-      // Update running state based on server pause state
-      // But don't update the timer's current time when running
       setIsRunning(!parsedSettings.isPaused);
 
       logTimerState("fetch-complete", {
@@ -95,7 +88,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
       const dataToSend = { ...data };
       if (dataToSend.remainingTime !== undefined) {
-        dataToSend.remainingTime = Math.ceil(dataToSend.remainingTime / 60); // send as minutes
+        dataToSend.remainingTime = Math.ceil(dataToSend.remainingTime / 60);
       }
 
       await fetch(`http://localhost:3000/api/room/update-time/${roomId}`, {
@@ -347,32 +340,17 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
           <RefreshCw size={18} />
         </Button>
 
-        <Button
-          size="lg"
-          className={
-            timeSettings.isPaused
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-blue-600 hover:bg-blue-700"
-          }
-          onClick={togglePause}
-        >
+        <Button size="lg" onClick={togglePause}>
           {timeSettings.isPaused ? (
             <>
-              <Play size={16} className="mr-2" /> Resume
+              <Play size={18} className="mr-2" /> Start
             </>
           ) : (
             <>
-              <Pause size={16} className="mr-2" /> Pause
+              <Pause size={18} className="mr-2" /> Pause
             </>
           )}
         </Button>
-      </div>
-
-      <div className="text-center mt-3">
-        <span className="text-sm text-gray-500">
-          {mode === "focus" ? "Focus" : "Break"} mode •{" "}
-          {timeSettings.isPaused ? "Paused" : "Running"}
-        </span>
       </div>
     </div>
   );
