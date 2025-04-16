@@ -7,7 +7,7 @@ interface TimeSettings {
   id: string;
   focusTime: number;
   breakTime: number;
-  remainingTime: number;
+  remainingTime: number; // in minutes (from backend)
   isPaused: boolean;
 }
 
@@ -17,7 +17,7 @@ interface PomodoroTimerProps {
 
 const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
   const [timeSettings, setTimeSettings] = useState<TimeSettings | null>(null);
-  const [localTimeLeft, setLocalTimeLeft] = useState<number>(0);
+  const [localTimeLeft, setLocalTimeLeft] = useState<number>(0); // in seconds
   const [mode, setMode] = useState<"focus" | "break">("focus");
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -29,6 +29,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
   const lastTickRef = useRef<number>(Date.now());
   const tickCountRef = useRef<number>(0);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const initialLoadRef = useRef<boolean>(true);
 
   const logTimerState = (action: string, state: { [key: string]: unknown }) => {
     console.log(`Timer [${action}]:`, {
@@ -39,6 +40,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
   const fetchTimeSettings = async () => {
     try {
+      // Skip polling if local update is in progress
+      if (isLocalUpdate) return;
+
       const res = await fetch(`http://localhost:3000/api/room/${roomId}/time`, {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -52,20 +56,25 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
         isPaused: settings.isPaused !== undefined ? settings.isPaused : true,
       };
 
-      if (isLocalUpdate) {
-        setIsLocalUpdate(false);
-        return;
-      }
-
-      const serverTimeLeft = parsedSettings.remainingTime * 60;
+      // Only apply server time during initial load or when timer is paused
+      const serverTimeLeft = parsedSettings.remainingTime * 60; // convert to seconds
       const currentMode = serverTimeLeft <= 0 ? "break" : "focus";
 
       setTimeSettings(parsedSettings);
-      setLocalTimeLeft(serverTimeLeft);
-      setMode(currentMode);
+
+      // Only update local time from server on initial load or when paused
+      // This prevents overriding the local countdown
+      if (initialLoadRef.current || parsedSettings.isPaused) {
+        setLocalTimeLeft(serverTimeLeft);
+        setMode(currentMode);
+        initialLoadRef.current = false;
+      }
+
       setIsLoading(false);
       setLastServerSync(Date.now());
 
+      // Update running state based on server pause state
+      // But don't update the timer's current time when running
       setIsRunning(!parsedSettings.isPaused);
 
       logTimerState("fetch-complete", {
@@ -86,7 +95,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
       const dataToSend = { ...data };
       if (dataToSend.remainingTime !== undefined) {
-        dataToSend.remainingTime = Math.ceil(dataToSend.remainingTime / 60);
+        dataToSend.remainingTime = Math.ceil(dataToSend.remainingTime / 60); // send as minutes
       }
 
       await fetch(`http://localhost:3000/api/room/update-time/${roomId}`, {
@@ -119,7 +128,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
       const newTime = Math.max(0, prev - adjustedElapsed);
 
       if (newTime <= 0) {
-        // Timer completed - switch modes
         const nextMode = mode === "focus" ? "break" : "focus";
         const nextDuration =
           (nextMode === "focus"
@@ -128,7 +136,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
         setMode(nextMode);
 
-        // To Update server on mode switch
         updateTimeSettings({
           remainingTime: nextDuration,
           isPaused: false,
@@ -157,9 +164,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
   };
 
   const startTimer = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
     lastTickRef.current = Date.now();
     tickCountRef.current = 0;
@@ -185,10 +190,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
     const newPauseState = !timeSettings.isPaused;
 
-    setTimeSettings((prev) => {
-      if (!prev) return null;
-      return { ...prev, isPaused: newPauseState };
-    });
+    setTimeSettings((prev) =>
+      prev ? { ...prev, isPaused: newPauseState } : null
+    );
 
     updateTimeSettings({
       remainingTime: localTimeLeft,
@@ -210,13 +214,10 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
     const newTime = timeSettings.focusTime * 60;
 
     stopTimer();
-
     setLocalTimeLeft(newTime);
     setMode("focus");
-    setTimeSettings((prev) => {
-      if (!prev) return null;
-      return { ...prev, isPaused: true };
-    });
+
+    setTimeSettings((prev) => (prev ? { ...prev, isPaused: true } : null));
 
     updateTimeSettings({
       remainingTime: newTime,
@@ -236,36 +237,24 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
   useEffect(() => {
     fetchTimeSettings();
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
-  });
 
-  // polling to synchronize with server
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
+
   useEffect(() => {
-    // Clear any existing polling
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-    }
+    if (pollingRef.current) clearInterval(pollingRef.current);
 
     pollingRef.current = setInterval(() => {
-      // Only poll if we haven't recently updated the server ourselves
-      if (!isLocalUpdate) {
-        fetchTimeSettings();
-      }
-    }, 3000); // Poll every 3 seconds
+      fetchTimeSettings();
+    }, 3000);
 
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
+      if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  });
+  }, []);
 
   useEffect(() => {
     if (isRunning && timeSettings && !timeSettings.isPaused) {
@@ -275,9 +264,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [isRunning]);
 
