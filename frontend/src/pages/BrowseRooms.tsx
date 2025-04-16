@@ -27,7 +27,7 @@ const BrowseRooms = () => {
   } = useQuery({
     queryKey: ["rooms", searchQuery, selectedCategory],
     queryFn: async () => {
-      let url = "http://localhost:3000/api/room/find?";
+      let url = "http://localhost:3000/api/room/find?includePrivate=true&";
 
       if (searchQuery) {
         url += `name=${searchQuery}&`;
@@ -55,11 +55,14 @@ const BrowseRooms = () => {
         id: room.id,
         name: room.name,
         category: room.category,
-        participants: room.participants?.length || 0,
+        participants: room._count?.participants || 0,
         progress: 0,
         timeRemaining: room.timerSettings?.focusTime * 60 || 1500,
         totalTime: room.timerSettings?.focusTime * 60 || 1500,
         icon: categoryIcons[room.category] || categoryIcons.DEFAULT,
+        isPrivate: room.isPrivate,
+        password: room.password,
+        description: room.description,
       }));
     },
     enabled: true,

@@ -467,14 +467,10 @@ export class RoomService {
         };
       }
 
-<<<<<<< HEAD
-      const roomCount = await this.prisma.studyRoom.count();
-=======
       console.log("Where clause:", whereClause);
 
       const roomCount = await prisma.studyRoom.count();
       console.log("Total rooms in database:", roomCount);
->>>>>>> 81016c2d92122f260d104300c9777636592c0b41
 
       const rooms = await prisma.studyRoom.findMany({
         where: whereClause,
