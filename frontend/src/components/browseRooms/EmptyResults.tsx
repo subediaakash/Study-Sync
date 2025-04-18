@@ -8,7 +8,7 @@ export const EmptyResults = () => {
       <p className="text-gray-500 mb-4">
         No study rooms found matching your criteria
       </p>
-      <Link to="/create-room">
+      <Link to="/create-rooms">
         <Button className="bg-study-blue hover:bg-study-darkBlue">
           Create a New Room
         </Button>

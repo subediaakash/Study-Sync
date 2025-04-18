@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "dev": "nodemon src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "studio": "npx prisma studio",
-    "postinstall": "npx prisma generate",
-    "prisma:migrate": "npx prisma migrate dev",
-    "prisma:docker": "pnpm postinstall && pnpm prisma:migrate",
-    "dev:docker": "pnpm prisma:docker && concurrently \"pnpm studio\" \"pnpm dev\""
-  },
+ "scripts": {
+  "dev": "nodemon src/index.ts",
+  "build": "tsc",
+  "start": "node dist/index.js",
+  "studio": "npx prisma studio",
+  "postinstall": "npx prisma generate",
+  "prisma:migrate": "npx prisma migrate reset --force && npx prisma migrate dev --name init",
+  "prisma:docker": "pnpm postinstall && pnpm prisma:migrate",
+  "dev:docker": "pnpm prisma:docker && concurrently \"pnpm studio\" \"pnpm dev\""
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

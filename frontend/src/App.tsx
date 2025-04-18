@@ -11,6 +11,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import CreateRoom from "./pages/CreateRoom";
 import StudyRoom from "./pages/StudyRoom";
 import BrowseRooms from "./pages/BrowseRooms";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/create-rooms" element={<CreateRoom />} />
             <Route path="/rooms/:roomId" element={<StudyRoom />} />{" "}
             <Route path="/browse-rooms" element={<BrowseRooms />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Routes>
       </BrowserRouter>
