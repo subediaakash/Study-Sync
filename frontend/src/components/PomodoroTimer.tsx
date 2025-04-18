@@ -5,15 +5,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface TimeSettings {
   id: string;
+  name?: string;
   focusTime: number;
   breakTime: number;
-  remainingTime: number; // in minutes (from backend)
+  remainingTime: number;
   isPaused: boolean;
+  createdAt?: string;
 }
 
 interface PomodoroTimerProps {
   roomId: string;
 }
+
+const minutesToSeconds = (minutes: number): number => {
+  return Math.round(minutes * 60);
+};
+
+const secondsToMinutes = (seconds: number): number => {
+  return Math.round((seconds / 60) * 100) / 100;
+};
 
 const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
   const [timeSettings, setTimeSettings] = useState<TimeSettings | null>(null);
@@ -55,7 +65,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
         isPaused: settings.isPaused !== undefined ? settings.isPaused : true,
       };
 
-      const serverTimeLeft = parsedSettings.remainingTime * 60;
+      const serverTimeLeft = minutesToSeconds(parsedSettings.remainingTime);
       const currentMode = serverTimeLeft <= 0 ? "break" : "focus";
 
       setTimeSettings(parsedSettings);
@@ -73,6 +83,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
       logTimerState("fetch-complete", {
         isPaused: parsedSettings.isPaused,
         remainingTime: serverTimeLeft,
+        originalRemaining: parsedSettings.remainingTime,
         isLocalUpdate,
       });
     } catch (err) {
@@ -88,7 +99,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
       const dataToSend = { ...data };
       if (dataToSend.remainingTime !== undefined) {
-        dataToSend.remainingTime = Math.ceil(dataToSend.remainingTime / 60);
+        dataToSend.remainingTime = secondsToMinutes(dataToSend.remainingTime);
       }
 
       await fetch(`http://localhost:3000/api/room/update-time/${roomId}`, {
@@ -122,10 +133,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
 
       if (newTime <= 0) {
         const nextMode = mode === "focus" ? "break" : "focus";
-        const nextDuration =
-          (nextMode === "focus"
-            ? timeSettings.focusTime
-            : timeSettings.breakTime) * 60;
+        const nextDuration = minutesToSeconds(
+          nextMode === "focus" ? timeSettings.focusTime : timeSettings.breakTime
+        );
 
         setMode(nextMode);
 
@@ -204,7 +214,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
   const resetTimer = () => {
     if (!timeSettings) return;
 
-    const newTime = timeSettings.focusTime * 60;
+    const newTime = minutesToSeconds(timeSettings.focusTime);
 
     stopTimer();
     setLocalTimeLeft(newTime);
@@ -291,10 +301,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ roomId }) => {
     );
   }
 
-  const currentDuration =
-    mode === "focus"
-      ? timeSettings.focusTime * 60
-      : timeSettings.breakTime * 60;
+  const currentDuration = minutesToSeconds(
+    mode === "focus" ? timeSettings.focusTime : timeSettings.breakTime
+  );
   const progress = ((currentDuration - localTimeLeft) / currentDuration) * 100;
 
   return (

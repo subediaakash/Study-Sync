@@ -52,6 +52,20 @@ const createRoomAPI = async (roomData: RoomData) => {
   return response.data;
 };
 
+const formatTimeValue = (minutes: number, seconds: number = 0): string => {
+  return `${minutes}.${seconds.toString().padStart(2, "0")}`;
+};
+
+const parseTimeValue = (
+  timeValue: string
+): { minutes: number; seconds: number } => {
+  const [minutesPart, secondsPart = "00"] = timeValue.split(".");
+  return {
+    minutes: parseInt(minutesPart, 10),
+    seconds: parseInt(secondsPart, 10),
+  };
+};
+
 const CreateRoom = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -60,8 +74,8 @@ const CreateRoom = () => {
     roomName: "",
     category: "",
     description: "",
-    focusTime: 25,
-    breakTime: 5,
+    focusTime: "25.00",
+    breakTime: "5.00",
     isPrivate: false,
     password: "",
   });
@@ -111,6 +125,14 @@ const CreateRoom = () => {
       return;
     }
 
+    const focusTimeParts = parseTimeValue(formData.focusTime);
+    const breakTimeParts = parseTimeValue(formData.breakTime);
+
+    const focusTimeInMinutes =
+      focusTimeParts.minutes + focusTimeParts.seconds / 60;
+    const breakTimeInMinutes =
+      breakTimeParts.minutes + breakTimeParts.seconds / 60;
+
     const roomData: RoomData = {
       name: formData.roomName,
       ownerId: userId,
@@ -120,8 +142,8 @@ const CreateRoom = () => {
       password: formData.isPrivate ? formData.password : null,
       timerSettings: {
         name: "Custom Timer",
-        focusTime: Number(formData.focusTime),
-        breakTime: Number(formData.breakTime),
+        focusTime: focusTimeInMinutes,
+        breakTime: breakTimeInMinutes,
       },
     };
 
@@ -133,6 +155,7 @@ const CreateRoom = () => {
   const capitaliseAllWords = (str: string): string => {
     return str.toUpperCase();
   };
+
   const categories = [
     "mathematics",
     "computer science",
@@ -142,6 +165,26 @@ const CreateRoom = () => {
     "science",
     "business",
   ];
+
+  const focusTimeOptions = [
+    { minutes: 25, seconds: 0 },
+    { minutes: 25, seconds: 30 },
+    { minutes: 30, seconds: 0 },
+    { minutes: 45, seconds: 0 },
+    { minutes: 50, seconds: 0 },
+    { minutes: 60, seconds: 0 },
+  ];
+
+  const breakTimeOptions = [
+    { minutes: 5, seconds: 0 },
+    { minutes: 5, seconds: 30 },
+    { minutes: 10, seconds: 0 },
+    { minutes: 15, seconds: 0 },
+  ];
+
+  const formatTimeDisplay = (minutes: number, seconds: number): string => {
+    return `${minutes} min ${seconds > 0 ? `${seconds} sec` : ""}`;
+  };
 
   const user = useAtomValue(authAtom) as { id: string };
   console.log("Auth user data:", user);
@@ -212,7 +255,7 @@ const CreateRoom = () => {
               <div className="space-y-2">
                 <Label htmlFor="focusTime">Focus Time</Label>
                 <Select
-                  value={formData.focusTime.toString()}
+                  value={formData.focusTime}
                   onValueChange={(value) =>
                     handleSelectChange("focusTime", value)
                   }
@@ -221,11 +264,17 @@ const CreateRoom = () => {
                     <SelectValue placeholder="Select focus time" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[25, 30, 45, 50, 60].map((time) => (
-                      <SelectItem key={time} value={time.toString()}>
-                        {time} minutes
-                      </SelectItem>
-                    ))}
+                    {focusTimeOptions.map((option) => {
+                      const value = formatTimeValue(
+                        option.minutes,
+                        option.seconds
+                      );
+                      return (
+                        <SelectItem key={value} value={value}>
+                          {formatTimeDisplay(option.minutes, option.seconds)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -233,7 +282,7 @@ const CreateRoom = () => {
               <div className="space-y-2">
                 <Label htmlFor="breakTime">Break Time</Label>
                 <Select
-                  value={formData.breakTime.toString()}
+                  value={formData.breakTime}
                   onValueChange={(value) =>
                     handleSelectChange("breakTime", value)
                   }
@@ -242,11 +291,17 @@ const CreateRoom = () => {
                     <SelectValue placeholder="Select break time" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[5, 10, 15].map((time) => (
-                      <SelectItem key={time} value={time.toString()}>
-                        {time} minutes
-                      </SelectItem>
-                    ))}
+                    {breakTimeOptions.map((option) => {
+                      const value = formatTimeValue(
+                        option.minutes,
+                        option.seconds
+                      );
+                      return (
+                        <SelectItem key={value} value={value}>
+                          {formatTimeDisplay(option.minutes, option.seconds)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

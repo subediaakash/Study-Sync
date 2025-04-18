@@ -1,13 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, Menu, X, ChevronDown } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Clock, User, LogOut, Menu, X, ChevronDown } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAtom } from "jotai";
+import { authAtom, api } from "../auth/atom";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Handle scroll effect for navbar
+  type User = {
+    name: string;
+    email: string;
+  };
+
+  const [user, setUser] = useAtom(authAtom) as [
+    User | null,
+    React.Dispatch<React.SetStateAction<User | null>>
+  ];
+  const navigate = useNavigate();
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -16,6 +38,29 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const capitalizeFirstLetter = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
+
+  const handleLogout = () => {
+    try {
+      // Clear the auth token cookie
+      document.cookie =
+        "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+      // Update state
+      setUser(null);
+
+      // Redirect to signup page
+      navigate("/signup");
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
+
+  const capitalizedName = user?.name
+    ? capitalizeFirstLetter(user.name.split(" ")[0])
+    : "";
 
   return (
     <nav
@@ -36,26 +81,47 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-1 lg:space-x-8">
-          <NavLink href="#features">Features</NavLink>
-          <NavLink href="#how-it-works">How It Works</NavLink>
-          <NavLink href="#pricing">Pricing</NavLink>
+          {!user && (
+            <>
+              <NavLink href="#features">Features</NavLink>
+              <NavLink href="#how-it-works">How It Works</NavLink>
+              <NavLink href="#pricing">Pricing</NavLink>
+            </>
+          )}
         </div>
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/login">
-            <Button
-              variant="outline"
-              className="border-theme-blue-medium text-theme-blue-medium hover:bg-theme-blue-medium hover:text-white transition-colors"
-            >
-              Login
-            </Button>
-          </Link>
-          <Link to="/signup">
-            <Button className="bg-theme-blue-medium hover:bg-theme-blue-dark text-white transition-all hover:shadow-lg">
-              Get Started
-            </Button>
-          </Link>
+          {!user ? (
+            <>
+              <Link to="/login">
+                <Button
+                  variant="outline"
+                  className="border-theme-blue-medium text-theme-blue-medium hover:bg-theme-blue-medium hover:text-white transition-colors"
+                >
+                  Login
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="bg-theme-blue-medium hover:bg-theme-blue-dark text-white transition-all hover:shadow-lg">
+                  Get Started
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/profile">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 rounded-full px-4 py-2 text-theme-blue-dark hover:bg-theme-blue-light/30 transition"
+                >
+                  <User className="h-5 w-5" />
+                  <span className="font-medium">{capitalizedName}</span>
+                </Button>
+              </Link>
+              <LogoutConfirmDialog handleLogout={handleLogout} />
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -80,37 +146,67 @@ const Navbar = () => {
       >
         <div className="container mx-auto px-4 py-4 flex flex-col space-y-6">
           <div className="flex flex-col space-y-4">
-            <MobileNavLink
-              href="#features"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Features
-            </MobileNavLink>
-            <MobileNavLink
-              href="#how-it-works"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              How It Works
-            </MobileNavLink>
-            <MobileNavLink href="#pricing" onClick={() => setIsMenuOpen(false)}>
-              Pricing
-            </MobileNavLink>
+            {!user && (
+              <>
+                <MobileNavLink
+                  href="#features"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Features
+                </MobileNavLink>
+                <MobileNavLink
+                  href="#how-it-works"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  How It Works
+                </MobileNavLink>
+                <MobileNavLink
+                  href="#pricing"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Pricing
+                </MobileNavLink>
+              </>
+            )}
           </div>
 
           <div className="flex flex-col space-y-3 pt-2 border-t border-gray-100">
-            <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-              <Button
-                variant="outline"
-                className="w-full border-theme-blue-medium text-theme-blue-medium hover:bg-theme-blue-medium hover:text-white"
-              >
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
-              <Button className="w-full bg-theme-blue-medium hover:bg-theme-blue-dark text-white">
-                Get Started
-              </Button>
-            </Link>
+            {!user ? (
+              <>
+                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                  <Button
+                    variant="outline"
+                    className="w-full border-theme-blue-medium text-theme-blue-medium hover:bg-theme-blue-medium hover:text-white"
+                  >
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
+                  <Button className="w-full bg-theme-blue-medium hover:bg-theme-blue-dark text-white">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                  <Button
+                    variant="ghost"
+                    className="w-full flex items-center gap-2 text-theme-blue-dark hover:bg-theme-blue-light/30 transition"
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="font-medium">{capitalizedName}</span>
+                  </Button>
+                </Link>
+                <LogoutConfirmDialog
+                  handleLogout={() => {
+                    setIsMenuOpen(false);
+                    handleLogout();
+                  }}
+                  fullWidth
+                />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -118,7 +214,6 @@ const Navbar = () => {
   );
 };
 
-// Desktop Navigation Link Component
 const NavLink = ({ href, children }) => (
   <a
     href={href}
@@ -129,7 +224,6 @@ const NavLink = ({ href, children }) => (
   </a>
 );
 
-// Mobile Navigation Link Component
 const MobileNavLink = ({ href, onClick, children }) => (
   <a
     href={href}
@@ -139,6 +233,30 @@ const MobileNavLink = ({ href, onClick, children }) => (
     <span className="font-medium">{children}</span>
     <ChevronDown className="h-4 w-4 opacity-70" />
   </a>
+);
+const LogoutConfirmDialog = ({ handleLogout, fullWidth = false }) => (
+  <AlertDialog>
+    <AlertDialogTrigger asChild>
+      <Button
+        variant="destructive"
+        className={`flex items-center gap-2 ${
+          fullWidth ? "w-full" : "rounded-full px-4 py-2"
+        } bg-red-500 hover:bg-red-600 text-white`}
+      >
+        <LogOut className="h-5 w-5" />
+        <span>Logout</span>
+      </Button>
+    </AlertDialogTrigger>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 );
 
 export default Navbar;
