@@ -27,3 +27,4 @@ roomRouter.get("/:id/participants", RoomController.getParticipants);
 
 roomRouter.get("/:id/time", RoomController.getTimerSettings);
 roomRouter.patch("/update-time/:id", RoomController.updateTimerSettings);
+roomRouter.get("/:id/show-participants", RoomController.showParticipants);

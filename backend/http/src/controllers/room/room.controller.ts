@@ -49,4 +49,7 @@ export class RoomController {
   static async updateTimerSettings(req: Request, res: Response) {
     await roomService.updateTimerSettings(req, res);
   }
+  static async showParticipants(req: Request, res: Response) {
+    await roomService.showParticipants(req, res);
+  }
 }

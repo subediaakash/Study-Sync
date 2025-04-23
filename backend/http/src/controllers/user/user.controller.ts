@@ -15,4 +15,10 @@ export class UserController {
   static async deleteRoomCreatedByUser(req: Request, res: Response) {
     await userService.deleteRoomCreatedByUser(req, res);
   }
+  static async leaveRoom(req: Request, res: Response) {
+    await userService.leaveRoom(req, res);
+  }
+  static async removeParticipantFromRoom(req: Request, res: Response) {
+    await userService.removeUserFromRoom(req, res);
+  }
 }

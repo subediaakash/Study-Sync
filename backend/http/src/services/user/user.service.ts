@@ -76,4 +76,101 @@ export class UserService {
       throw new Error("Unable to delete room created by user");
     }
   }
+  async removeUserFromRoom(req: Request, res: Response) {
+    const userId = res.locals.user.id;
+    const roomId = req.params.roomId;
+    const participantId = req.body.participantId;
+    try {
+      const room = await prisma.studyRoom.findUnique({
+        where: {
+          id: roomId,
+        },
+        include: {
+          participants: true,
+        },
+      });
+
+      if (!room) {
+        res.status(404).json({ message: "Room not found" });
+        return;
+      }
+      if (room.ownerId === userId) {
+        res.status(403).json({
+          message: "You dont have enough permission to remove other users",
+        });
+        return;
+      }
+      if (userId === participantId) {
+        res.status(403).json({
+          message:
+            "You cannot remove yourself from the room, you need to delete the room to perform the action",
+        });
+        return;
+      }
+
+      const participant = room.participants.find(
+        (participant) => participant.id === participantId
+      );
+
+      if (!participant) {
+        res.status(404).json({ message: "User not found in this room" });
+        return;
+      }
+
+      const updatedRoom = await prisma.studyRoom.update({
+        where: {
+          id: roomId,
+        },
+        data: {
+          participants: {
+            disconnect: { id: userId },
+          },
+        },
+      });
+
+      res.status(200).json({
+        message: "User removed from room successfully",
+        room: updatedRoom,
+      });
+    } catch (error: any) {
+      console.error("Error removing user from room:", error);
+      throw new Error("Unable to remove user from room");
+    }
+  }
+
+  async leaveRoom(req: Request, res: Response) {
+    const userId = res.locals.user.id;
+    const roomId = req.params.roomId;
+    const room = await prisma.studyRoom.findUnique({ where: { id: roomId } });
+    //we need to disconnect the user from the room if he wants to leave the room
+    if (!room) {
+      res.status(404).json({ message: "Room not found" });
+      return;
+    }
+    if (room.ownerId === userId) {
+      res.status(403).json({
+        message: "You cannot leave the room, you are the owner of the room",
+      });
+      return;
+    }
+    try {
+      const updatedRoom = await prisma.studyRoom.update({
+        where: {
+          id: roomId,
+        },
+        data: {
+          participants: {
+            disconnect: { id: userId },
+          },
+        },
+      });
+      res.status(200).json({
+        message: "User removed from room successfully",
+        room: updatedRoom,
+      });
+    } catch (error: any) {
+      console.error("Error removing user from room:", error);
+      throw new Error("Unable to remove user from room");
+    }
+  }
 }

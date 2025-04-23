@@ -16,4 +16,8 @@ userRouter.delete(
   UserController.deleteRoomCreatedByUser
 );
 
-
+userRouter.patch("/leave-room/:userId", UserController.leaveRoom);
+userRouter.patch(
+  "/:roomId/remove-participant",
+  UserController.removeParticipantFromRoom
+);

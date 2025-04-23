@@ -568,4 +568,28 @@ export class RoomService {
       return res.status(500).json({ error: "Failed to update timer settings" });
     }
   }
+  async showParticipants(req: Request, res: Response) {
+    try {
+      const { id: roomId } = req.params;
+      const room = await prisma.studyRoom.findUnique({
+        where: { id: roomId },
+        include: { participants: true },
+      });
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      if (room.participants.length === 0) {
+        return res.status(404).json({ message: "No participants found" });
+      }
+      const participants = room.participants.map((participant) => ({
+        id: participant.id,
+        name: participant.name,
+        email: participant.email,
+      }));
+      return res.status(200).json({ participants });
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      return res.status(500).json({ error: "Failed to fetch participants" });
+    }
+  }
 }
