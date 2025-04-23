@@ -1,16 +1,18 @@
 import { useAtomValue } from "jotai";
 import { authAtom } from "@/auth/atom";
 import { useCreatedRooms } from "@/components/profilePage/UseCreatedRooms";
-import CreatedRooms from "@/components/profilePage/GetRooms";
+import CreatedRooms from "@/components/profilePage/CreatedRooms";
 import { Button } from "@/components/ui/button";
-
 import { Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import ParticipatingRooms from "@/components/profilePage/ParticipatingRooms";
+import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 
 export default function CreatedRoomsPage() {
   const user = useAtomValue(authAtom) as { id: string } | null;
   const userId = user?.id;
+  const navigate = useNavigate();
 
   const {
     data: rooms = [],
@@ -19,9 +21,18 @@ export default function CreatedRoomsPage() {
     refetch,
   } = useCreatedRooms(userId);
 
-  const handleEditRoom = (roomId: string) => {
-    console.log("Editing room:", roomId);
-  };
+  const handleEditRoom = useCallback(
+    (roomId: string) => {
+      const roomToEdit = rooms.find((room) => room.id === roomId);
+      if (roomToEdit) {
+        navigate(`/edit-room/${roomId}`, { state: { roomData: roomToEdit } });
+        console.log("Room to edit:", roomToEdit);
+      } else {
+        console.warn(`Room with ID ${roomId} not found in fetched data.`);
+      }
+    },
+    [navigate, rooms]
+  );
 
   if (isLoading) {
     return (

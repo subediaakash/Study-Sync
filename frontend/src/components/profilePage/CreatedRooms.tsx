@@ -1,9 +1,22 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Pencil, Lock, Globe, Key } from "lucide-react";
+import { Pencil, Lock, Globe, Key, Users, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+
+interface Participant {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface TimerSettings {
+  focusTime: number;
+  breakTime: number;
+  isPaused: boolean;
+}
 
 interface Room {
   id: string;
@@ -13,6 +26,8 @@ interface Room {
   isPrivate: boolean;
   password: string | null;
   createdAt: string;
+  participants: Participant[];
+  timerSettings: TimerSettings;
 }
 
 interface CreatedRoomsProps {
@@ -42,7 +57,7 @@ export default function CreatedRooms({ rooms, onEditRoom }: CreatedRoomsProps) {
               asChild
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              <Link to="/create-room">Create Your First Room</Link>
+              <Link to="/create-rooms">Create Your First Room</Link>
             </Button>
           </div>
         ) : (
@@ -92,6 +107,19 @@ export default function CreatedRooms({ rooms, onEditRoom }: CreatedRoomsProps) {
                           <span>Password: {room.password}</span>
                         </div>
                       )}
+
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <Users className="h-4 w-4" />
+                        <span>{room.participants.length} participants</span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          {room.timerSettings.focusTime}/
+                          {room.timerSettings.breakTime} mins
+                        </span>
+                      </div>
 
                       <span className="text-gray-400 text-sm">
                         Created {new Date(room.createdAt).toLocaleDateString()}

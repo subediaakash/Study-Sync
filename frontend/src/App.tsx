@@ -12,6 +12,7 @@ import CreateRoom from "./pages/CreateRoom";
 import StudyRoom from "./pages/StudyRoom";
 import BrowseRooms from "./pages/BrowseRooms";
 import ProfilePage from "./pages/ProfilePage";
+import EditRooms from "./pages/EditRooms";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/rooms/:roomId" element={<StudyRoom />} />{" "}
             <Route path="/browse-rooms" element={<BrowseRooms />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/edit-room/:roomId" element={<EditRooms />} />
           </Route>
         </Routes>
       </BrowserRouter>
