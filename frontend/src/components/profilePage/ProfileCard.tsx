@@ -15,6 +15,8 @@ export default function ProfileCard({
   email,
   totalParticipants,
 }: ProfileCardProps) {
+
+  
   return (
     <Card className="w-full max-w-sm shadow-lg">
       <CardHeader className="text-center">

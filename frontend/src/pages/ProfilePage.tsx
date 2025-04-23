@@ -1,65 +1,56 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useAtomValue } from "jotai";
+import { authAtom } from "@/auth/atom";
+import { useCreatedRooms } from "@/components/profilePage/UseCreatedRooms";
+import CreatedRooms from "@/components/profilePage/GetRooms";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Pencil } from "lucide-react"; // Lucide icons
 
-interface ProfileCardProps {
-  name: string;
-  createdAt: string;
-  email: string;
-  totalParticipants: number;
-  onEditName?: () => void;
-  onEditEmail?: () => void;
-}
+import { Loader2 } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import ParticipatingRooms from "@/components/profilePage/ParticipatingRooms";
 
-export default function ProfileCard({
-  name,
-  createdAt,
-  email,
-  totalParticipants,
-  onEditName,
-  onEditEmail,
-}: ProfileCardProps) {
+export default function CreatedRoomsPage() {
+  const user = useAtomValue(authAtom) as { id: string } | null;
+  const userId = user?.id;
+
+  const {
+    data: rooms = [],
+    isLoading,
+    error,
+    refetch,
+  } = useCreatedRooms(userId);
+
+  const handleEditRoom = (roomId: string) => {
+    console.log("Editing room:", roomId);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-4">
+          Failed to load your rooms: {error.message}
+        </p>
+        <Button onClick={() => refetch()}>Retry</Button>
+      </div>
+    );
+  }
+
   return (
-    <Card className="w-full max-w-md mx-auto shadow-md p-4">
-      <CardHeader className="flex flex-col items-center space-y-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold">{name}</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 text-gray-500 hover:text-black"
-            onClick={onEditName}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        </div>
-        <p className="text-sm text-gray-500">Joined on {createdAt}</p>
-      </CardHeader>
-
-      <Separator className="my-4" />
-
-      <CardContent className="space-y-6 text-sm">
-        <div className="flex justify-between items-center">
-          <div className="text-gray-600">Email:</div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{email}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-gray-500 hover:text-black"
-              onClick={onEditEmail}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center text-gray-600">
-          <span>Total Participants:</span>
-          <span className="font-medium text-black">{totalParticipants}</span>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Navbar />
+      <div className="max-w-3xl mx-auto">
+        <CreatedRooms rooms={rooms} onEditRoom={handleEditRoom} />
+      </div>
+      <div className="max-w-3xl mx-auto">
+        <ParticipatingRooms />
+      </div>
+    </div>
   );
 }
