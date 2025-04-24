@@ -10,6 +10,10 @@ export class UserService {
         where: {
           ownerId: userId,
         },
+        include: {
+          participants: true,
+          timerSettings: true,
+        },
       });
       if (!rooms || rooms.length === 0) {
         res.status(404).json({ message: "No rooms found for this user" });
@@ -60,7 +64,11 @@ export class UserService {
       if (room.ownerId !== userId) {
         res
           .status(403)
-          .json({ message: "You are not authorized to delete this room" });
+          .json({
+            message: "You are not authorized to delete this room",
+            ownerId: room.ownerId,
+            userID: userId,
+          });
         return;
       }
       const deletedRoom = await prisma.studyRoom.delete({

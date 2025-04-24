@@ -14,4 +14,7 @@ export class AuthController {
   static async getUser(req: Request, res: Response): Promise<void> {
     await authService.checkProfile(req, res);
   }
+  static async logout(req: Request, res: Response): Promise<void> {
+    await authService.logout(req, res);
+  }
 }

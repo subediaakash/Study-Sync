@@ -145,4 +145,13 @@ export class AuthService {
       res.status(401).json({ error: "Invalid token" });
     }
   }
+  async logout(req: Request, res: Response): Promise<void> {
+    try {
+      res.clearCookie("auth_token");
+      res.json({ message: "User logged out successfully" });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
