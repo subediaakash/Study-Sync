@@ -5,7 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 
-const TimerSettings = () => {
+const TimerSettings = ({ roomData }) => {
+  // Extract timer settings from roomData
+  const timerSettings = roomData.timerSettings || {};
+
   const handleSave = () => {
     toast.success("Timer settings saved successfully", {
       description: "Your room timer settings have been updated",
@@ -23,7 +26,6 @@ const TimerSettings = () => {
           Save Changes
         </Button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 border-2 border-primary/10 hover:border-primary/20 transition-colors">
           <div className="space-y-4">
@@ -33,7 +35,7 @@ const TimerSettings = () => {
             <Input
               id="focus-time"
               type="number"
-              defaultValue="30"
+              defaultValue={timerSettings.focusTime || 30}
               className="bg-background transition-colors focus:border-primary"
             />
             <p className="text-sm text-muted-foreground">
@@ -41,42 +43,40 @@ const TimerSettings = () => {
             </p>
           </div>
         </Card>
+        <Card className="p-6 border-2 border-primary/10 hover:border-primary/20 transition-colors">
+          <div className="space-y-4">
+            <Label htmlFor="break-time" className="text-base font-medium">
+              Break Time (minutes)
+            </Label>
+            <Input
+              id="break-time"
+              type="number"
+              defaultValue={timerSettings.breakTime || 5}
+              className="bg-background transition-colors focus:border-primary"
+            />
+            <p className="text-sm text-muted-foreground">
+              Recommended: 5-15 minutes to rest
+            </p>
+          </div>
+        </Card>
+        <Card className="p-6 border-2 border-primary/10">
+          <div className="space-y-4">
+            <Label htmlFor="remaining-time" className="text-base font-medium">
+              Remaining Time (minutes)
+            </Label>
+            <Input
+              id="remaining-time"
+              type="number"
+              defaultValue={timerSettings.remainingTime || 29}
+              readOnly
+              className="bg-muted cursor-not-allowed"
+            />
+            <p className="text-sm text-muted-foreground">
+              Current time left in the active session
+            </p>
+          </div>
+        </Card>
       </div>
-
-      <Card className="p-6 border-2 border-primary/10 hover:border-primary/20 transition-colors">
-        <div className="space-y-4">
-          <Label htmlFor="break-time" className="text-base font-medium">
-            Break Time (minutes)
-          </Label>
-          <Input
-            id="break-time"
-            type="number"
-            defaultValue="5"
-            className="bg-background transition-colors focus:border-primary"
-          />
-          <p className="text-sm text-muted-foreground">
-            Recommended: 5-15 minutes to rest
-          </p>
-        </div>
-      </Card>
-
-      <Card className="p-6 border-2 border-primary/10">
-        <div className="space-y-4">
-          <Label htmlFor="remaining-time" className="text-base font-medium">
-            Remaining Time (minutes)
-          </Label>
-          <Input
-            id="remaining-time"
-            type="number"
-            defaultValue="29"
-            readOnly
-            className="bg-muted cursor-not-allowed"
-          />
-          <p className="text-sm text-muted-foreground">
-            Current time left in the active session
-          </p>
-        </div>
-      </Card>
     </div>
   );
 };

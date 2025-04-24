@@ -6,8 +6,8 @@ import { Eye, EyeOff, Save } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const Privacy = () => {
-  const [isPrivate, setIsPrivate] = useState(true);
+const Privacy = ({ roomData }) => {
+  const [isPrivate, setIsPrivate] = useState(roomData.isPrivate);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSave = () => {
@@ -27,7 +27,6 @@ const Privacy = () => {
           Save Changes
         </Button>
       </div>
-
       <div className="space-y-8">
         <div className="flex items-center justify-between p-4 rounded-lg bg-card hover:bg-accent/50 transition-colors">
           <div className="space-y-0.5">
@@ -38,7 +37,6 @@ const Privacy = () => {
           </div>
           <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
         </div>
-
         {isPrivate && (
           <div className="space-y-3 p-4 rounded-lg bg-card">
             <Label htmlFor="password" className="text-base font-medium">
@@ -49,6 +47,7 @@ const Privacy = () => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter room password"
+                defaultValue={roomData.password}
                 className="pr-10 transition-colors focus:border-primary"
               />
               <button

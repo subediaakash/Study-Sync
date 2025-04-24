@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export type TabType = "basic" | "privacy" | "timer" | "participants";
 
-const RoomSettings = () => {
+const RoomSettings = ({ roomData }) => {
   const [activeTab, setActiveTab] = useState<TabType>("basic");
 
   const tabs = [
@@ -18,6 +18,27 @@ const RoomSettings = () => {
     { id: "timer" as TabType, label: "Timer", icon: Timer },
     { id: "participants" as TabType, label: "Participants", icon: Users },
   ];
+
+  const processedRoomData = {
+    id: roomData.id,
+    name: roomData.name,
+    category: roomData.category,
+    description: roomData.description,
+    ownerId: roomData.ownerId,
+    isPrivate: roomData.isPrivate,
+    password: roomData.password,
+    createdAt: roomData.createdAt,
+    updatedAt: roomData.updatedAt,
+    participants: roomData.participants || [],
+    timerSettings: roomData.timerSettings || {
+      id: roomData.timerSettingId,
+      name: "Custom Timer",
+      focusTime: 30,
+      breakTime: 5,
+      remainingTime: 29,
+      isPaused: false,
+    },
+  };
 
   return (
     <div className="container mx-auto p-4 lg:p-8 min-h-screen">
@@ -41,13 +62,20 @@ const RoomSettings = () => {
             ))}
           </nav>
         </Card>
-
         <Card className="flex-1 p-6 bg-white shadow-lg border-0">
           <div className="max-w-4xl mx-auto">
-            {activeTab === "basic" && <BasicInfo />}
-            {activeTab === "privacy" && <Privacy />}
-            {activeTab === "timer" && <TimerSettings />}
-            {activeTab === "participants" && <Participants />}
+            {activeTab === "basic" && (
+              <BasicInfo roomData={processedRoomData} />
+            )}
+            {activeTab === "privacy" && (
+              <Privacy roomData={processedRoomData} />
+            )}
+            {activeTab === "timer" && (
+              <TimerSettings roomData={processedRoomData} />
+            )}
+            {activeTab === "participants" && (
+              <Participants roomData={processedRoomData} />
+            )}
           </div>
         </Card>
       </div>

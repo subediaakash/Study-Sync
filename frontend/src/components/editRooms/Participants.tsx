@@ -11,10 +11,15 @@ interface Participant {
   email: string;
 }
 
-const Participants = () => {
-  const [participants, setParticipants] = useState<Participant[]>([
-    { id: "1", name: "Aakash Subedi", email: "aakash@gmail.com" },
-  ]);
+const Participants = ({ roomData }) => {
+  // Use existing participants if available, otherwise use default
+  const initialParticipants =
+    Array.isArray(roomData.participants) && roomData.participants.length > 0
+      ? roomData.participants
+      : [{ id: "1", name: "Aakash Subedi", email: "aakash@gmail.com" }];
+
+  const [participants, setParticipants] =
+    useState<Participant[]>(initialParticipants);
   const [email, setEmail] = useState("");
 
   const handleSave = () => {
@@ -39,7 +44,6 @@ const Participants = () => {
           Save Changes
         </Button>
       </div>
-
       <div className="space-y-6">
         <div className="flex gap-3">
           <Input
@@ -53,7 +57,6 @@ const Participants = () => {
             Add Participant
           </Button>
         </div>
-
         <div className="space-y-4">
           <h3 className="text-base font-medium text-foreground">
             Current Participants ({participants.length})
@@ -66,7 +69,7 @@ const Participants = () => {
               <div className="flex items-center gap-4">
                 <Avatar>
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {participant.name[0]}
+                    {participant.name ? participant.name[0] : "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
