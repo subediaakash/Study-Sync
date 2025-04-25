@@ -14,6 +14,8 @@ import { Clock, User, LogOut, Menu, X, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
 import { authAtom, api } from "../auth/atom";
+import Cookies from "js-cookie";
+import axios from "axios";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,22 +44,22 @@ const Navbar = () => {
   const capitalizeFirstLetter = (str: string) =>
     str.charAt(0).toUpperCase() + str.slice(1);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      // Clear the auth token cookie
-      document.cookie =
-        "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      await axios.post(
+        "http://localhost:3000/api/auth/logout",
+        {},
+        { withCredentials: true }
+      );
 
-      // Update state
       setUser(null);
+      Cookies.remove("auth_token");
 
-      // Redirect to signup page
       navigate("/signup");
     } catch (error) {
       console.error("Logout failed", error);
     }
   };
-
   const capitalizedName = user?.name
     ? capitalizeFirstLetter(user.name.split(" ")[0])
     : "";

@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Save, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 interface Participant {
   id: string;
@@ -12,7 +14,7 @@ interface Participant {
 }
 
 const Participants = ({ roomData }) => {
-  // Use existing participants if available, otherwise use default
+  const navigate = useNavigate();
   const initialParticipants =
     Array.isArray(roomData.participants) && roomData.participants.length > 0
       ? roomData.participants
@@ -28,9 +30,24 @@ const Participants = ({ roomData }) => {
     });
   };
 
-  const handleRemove = (id: string) => {
+  const handleRemove = async (id: string) => {
     setParticipants(participants.filter((p) => p.id !== id));
+
     toast.success("Participant removed successfully");
+    const removeParticipant = await axios.patch(
+      `http://localhost:3000/api/user/${roomData.id}/remove-participant`,
+      {
+        participantId: id,
+      },
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(removeParticipant);
+    navigate(`/profile`);
   };
 
   return (
